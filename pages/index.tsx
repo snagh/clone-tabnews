@@ -22,7 +22,9 @@ import {
   RefreshCw,
   ExternalLink,
   MessageSquare,
-  Volume2
+  Volume2,
+  Printer,
+  FileText
 } from 'lucide-react';
 import type { BriefingFormData, BriefingFormErrors, SubmissionStatus, BriefingField } from '../types/briefing';
 
@@ -329,6 +331,87 @@ export default function BrandingBriefingForm() {
     }
   };
 
+  const downloadTxtReport = () => {
+    const report = `==================================================
+BRIEFING ESTRATÉGICO DE BRANDING - ANDERSON JOSÉ BRANDING
+==================================================
+Empresa / Logotipo: ${formData.logoName}
+Data de Envio: ${new Date().toLocaleDateString('pt-BR')}
+
+1. O BÁSICO (ESTRUTURA E ESCOPO)
+--------------------------------------------------
+* Nome exato no logo: ${formData.logoName}
+* Slogan/Frase de apoio: ${formData.slogan || 'Não informado'}
+* O que a empresa faz: 
+  ${formData.businessDescription}
+* Razão do Rebranding: 
+  ${formData.rebrandingReason}
+* O que incomoda na marca atual: 
+  ${formData.currentBrandIssues || 'Não informado'}
+* Elemento obrigatório a manter: 
+  ${formData.keepFromOldIdentity || 'Não informado'}
+
+2. RAIO-X DO NEGÓCIO (POSICIONAMENTO OCULTO)
+--------------------------------------------------
+* História/Inspiração: 
+  ${formData.companyHistory || 'Não informado'}
+* Por que o cliente nos escolhe: 
+  ${formData.whyChooseUs || 'Não informado'}
+* Pior reclamação/dor no orgulho: 
+  ${formData.worstComplaint || 'Não informado'}
+* Declaração de posicionamento: 
+  ${formData.brandPositioningStatement || 'Não informado'}
+
+3. PÚBLICO-ALVO E CONCORRÊNCIA
+--------------------------------------------------
+* Cliente Ideal: 
+  ${formData.targetAudience || 'Não informado'}
+* Principal dor do cliente: 
+  ${formData.customerPainPoints || 'Não informado'}
+* Análise de Concorrentes: 
+  ${formData.competitorsAnalysis || 'Não informado'}
+
+4. PERSONALIDADE DA MARCA (EXTRAÇÃO PSICOLÓGICA)
+--------------------------------------------------
+* Marca como anfitriã de festa: 
+  ${formData.brandPartyHosting || 'Não informado'}
+* Personificação/Avatar: 
+  ${formData.brandPersonaAvatar || 'Não informado'}
+* Tom de Voz/Comunicação: 
+  ${formData.brandCommunicationTone || 'Não informado'}
+* Adjetivos desejados: 
+  ${formData.brandDesirableAdjectives || 'Não informado'}
+* Adjetivos indesejados: 
+  ${formData.brandUndesirableAdjectives || 'Não informado'}
+
+5. DIREÇÃO VISUAL E ENTREGÁVEIS (APLICAÇÃO PRÁTICA)
+--------------------------------------------------
+* Primeira sensação desejada: 
+  ${formData.brandFirstImpression || 'Não informado'}
+* Elementos a evitar: 
+  ${formData.visualsToAvoid || 'Não informado'}
+* Onde a marca será mais vista: 
+  ${formData.brandPrimaryTouchpoints || 'Não informado'}
+* Materiais prioritários/de imediato: 
+  ${formData.immediateDeliverables || 'Não informado'}
+* Links de Referência: 
+  ${formData.referenceLinks || 'Não informado'}
+* Prazo limite/Data de lançamento: 
+  ${formData.deadlineOrLaunchDate || 'Não informado'}
+
+==================================================
+Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Branding.
+==================================================`;
+
+    const element = document.createElement("a");
+    const file = new Blob([report], { type: 'text/plain;charset=utf-8' });
+    element.href = URL.createObjectURL(file);
+    element.download = `Briefing-${formData.logoName.replace(/\s+/g, '-').toLowerCase()}.txt`;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  };
+
   const handleReset = () => {
     setFormData(initialFormData);
     setErrors({});
@@ -338,7 +421,8 @@ export default function BrandingBriefingForm() {
   };
 
   return (
-    <div className="min-h-screen selection:bg-brand-500/30">
+    <>
+      <div className="min-h-screen selection:bg-brand-500/30 print:hidden">
       <Head>
         <title>Briefing de Branding Avançado // Anderson José</title>
         <meta name="description" content="Formulário avançado de briefing estratégico de branding." />
@@ -507,10 +591,31 @@ export default function BrandingBriefingForm() {
                   </dl>
                 </div>
 
+                {/* Ações de Exportação */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6 max-w-lg mx-auto">
+                  <button
+                    onClick={() => window.print()}
+                    type="button"
+                    className="inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 border border-white/10 text-white text-xs font-semibold py-3.5 px-6 rounded-xl transition-all"
+                  >
+                    <Printer className="h-4 w-4 text-brand-400" />
+                    Imprimir ou Salvar PDF
+                  </button>
+
+                  <button
+                    onClick={downloadTxtReport}
+                    type="button"
+                    className="inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 border border-white/10 text-white text-xs font-semibold py-3.5 px-6 rounded-xl transition-all"
+                  >
+                    <FileText className="h-4 w-4 text-brand-400" />
+                    Baixar Relatório (.txt)
+                  </button>
+                </div>
+
                 <button
                   onClick={handleReset}
                   type="button"
-                  className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white text-sm font-semibold py-3 px-8 rounded-xl shadow-lg active:scale-98 transition-all duration-300"
+                  className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white text-xs font-semibold py-3.5 px-8 rounded-xl shadow-lg active:scale-98 transition-all duration-300 w-full sm:w-auto"
                 >
                   <RefreshCw className="h-4 w-4" />
                   Enviar outro Briefing
@@ -1156,5 +1261,207 @@ export default function BrandingBriefingForm() {
         </div>
       </main>
     </div>
+
+    {/* AREA DE IMPRESSÃO (Visível apenas ao imprimir/salvar PDF) */}
+    <div className="hidden print:block print:bg-white print:text-black p-8 font-sans">
+      <div className="border-b-2 border-black pb-4 mb-8">
+        <h1 className="text-2xl font-bold tracking-tight uppercase">Briefing de Branding</h1>
+        <p className="text-xs font-bold text-zinc-600 mt-1">PROJETO DE IDENTIDADE VISUAL // ANDERSON JOSÉ BRANDING</p>
+        <div className="flex justify-between text-[10px] text-zinc-500 mt-4">
+          <span>Marca/Empresa: <strong>{formData.logoName}</strong></span>
+          <span>Data de Envio: <strong>{new Date().toLocaleDateString('pt-BR')}</strong></span>
+        </div>
+      </div>
+
+      <div className="space-y-6">
+        {/* 1. O Básico */}
+        <section className="avoid-break">
+          <h2 className="text-sm font-bold uppercase border-b border-zinc-300 pb-1 mb-3 text-zinc-800">1. O Básico (Estrutura e Escopo)</h2>
+          <table className="w-full text-xs border-collapse">
+            <tbody>
+              <tr className="border-b border-zinc-100">
+                <td className="py-2 font-bold text-zinc-600 w-1/3">Nome exato no logo:</td>
+                <td className="py-2 text-zinc-900 w-2/3">{formData.logoName}</td>
+              </tr>
+              {formData.slogan && (
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 font-bold text-zinc-600">Slogan/Frase de apoio:</td>
+                  <td className="py-2 text-zinc-900">{formData.slogan}</td>
+                </tr>
+              )}
+              <tr className="border-b border-zinc-100">
+                <td className="py-2 font-bold text-zinc-600">O que a empresa faz:</td>
+                <td className="py-2 text-zinc-900 whitespace-pre-wrap">{formData.businessDescription}</td>
+              </tr>
+              <tr className="border-b border-zinc-100">
+                <td className="py-2 font-bold text-zinc-600">Razão do rebranding:</td>
+                <td className="py-2 text-zinc-900 whitespace-pre-wrap">{formData.rebrandingReason}</td>
+              </tr>
+              {formData.currentBrandIssues && (
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 font-bold text-zinc-600">O que te incomoda na marca atual:</td>
+                  <td className="py-2 text-zinc-900 whitespace-pre-wrap">{formData.currentBrandIssues}</td>
+                </tr>
+              )}
+              {formData.keepFromOldIdentity && (
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 font-bold text-zinc-600">Identidade antiga a ser mantida:</td>
+                  <td className="py-2 text-zinc-900 whitespace-pre-wrap">{formData.keepFromOldIdentity}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </section>
+
+        {/* 2. Raio-X */}
+        <section className="avoid-break">
+          <h2 className="text-sm font-bold uppercase border-b border-zinc-300 pb-1 mb-3 text-zinc-800">2. Raio-X do Negócio (Posicionamento Oculto)</h2>
+          <table className="w-full text-xs border-collapse">
+            <tbody>
+              {formData.companyHistory && (
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 font-bold text-zinc-600 w-1/3">História e inspiração:</td>
+                  <td className="py-2 text-zinc-900 whitespace-pre-wrap">{formData.companyHistory}</td>
+                </tr>
+              )}
+              {formData.whyChooseUs && (
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 font-bold text-zinc-600">Diferencial competitivo principal:</td>
+                  <td className="py-2 text-zinc-900 whitespace-pre-wrap">{formData.whyChooseUs}</td>
+                </tr>
+              )}
+              {formData.worstComplaint && (
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 font-bold text-zinc-600">Reclamação mais temida:</td>
+                  <td className="py-2 text-zinc-900 whitespace-pre-wrap">{formData.worstComplaint}</td>
+                </tr>
+              )}
+              {formData.brandPositioningStatement && (
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 font-bold text-zinc-600">Declaração de posicionamento:</td>
+                  <td className="py-2 text-zinc-900">{formData.brandPositioningStatement}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </section>
+
+        {/* 3. Público */}
+        <section className="avoid-break">
+          <h2 className="text-sm font-bold uppercase border-b border-zinc-300 pb-1 mb-3 text-zinc-800">3. Público-Alvo e Concorrência</h2>
+          <table className="w-full text-xs border-collapse">
+            <tbody>
+              {formData.targetAudience && (
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 font-bold text-zinc-600 w-1/3">Cliente ideal:</td>
+                  <td className="py-2 text-zinc-900 whitespace-pre-wrap">{formData.targetAudience}</td>
+                </tr>
+              )}
+              {formData.customerPainPoints && (
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 font-bold text-zinc-600">Dor principal resolvida:</td>
+                  <td className="py-2 text-zinc-900 whitespace-pre-wrap">{formData.customerPainPoints}</td>
+                </tr>
+              )}
+              {formData.competitorsAnalysis && (
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 font-bold text-zinc-600">Principais concorrentes:</td>
+                  <td className="py-2 text-zinc-900 whitespace-pre-wrap">{formData.competitorsAnalysis}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </section>
+
+        {/* 4. Personalidade */}
+        <section className="avoid-break">
+          <h2 className="text-sm font-bold uppercase border-b border-zinc-300 pb-1 mb-3 text-zinc-800">4. Personalidade da Marca (Extração Psicológica)</h2>
+          <table className="w-full text-xs border-collapse">
+            <tbody>
+              {formData.brandPartyHosting && (
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 font-bold text-zinc-600 w-1/3">Metáfora da festa:</td>
+                  <td className="py-2 text-zinc-900 whitespace-pre-wrap">{formData.brandPartyHosting}</td>
+                </tr>
+              )}
+              {formData.brandPersonaAvatar && (
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 font-bold text-zinc-600">Personificação da empresa:</td>
+                  <td className="py-2 text-zinc-900 whitespace-pre-wrap">{formData.brandPersonaAvatar}</td>
+                </tr>
+              )}
+              {formData.brandCommunicationTone && (
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 font-bold text-zinc-600">Tom de voz da comunicação:</td>
+                  <td className="py-2 text-zinc-900">{formData.brandCommunicationTone}</td>
+                </tr>
+              )}
+              {formData.brandDesirableAdjectives && (
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 font-bold text-zinc-600">Adjetivos representativos:</td>
+                  <td className="py-2 text-zinc-900">{formData.brandDesirableAdjectives}</td>
+                </tr>
+              )}
+              {formData.brandUndesirableAdjectives && (
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 font-bold text-zinc-600">Adjetivos evitados:</td>
+                  <td className="py-2 text-zinc-900">{formData.brandUndesirableAdjectives}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </section>
+
+        {/* 5. Direção Visual */}
+        <section className="avoid-break">
+          <h2 className="text-sm font-bold uppercase border-b border-zinc-300 pb-1 mb-3 text-zinc-800">5. Direção Visual e Entregáveis (A Aplicação Prática)</h2>
+          <table className="w-full text-xs border-collapse">
+            <tbody>
+              {formData.brandFirstImpression && (
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 font-bold text-zinc-600 w-1/3">Primeira sensação desejada:</td>
+                  <td className="py-2 text-zinc-900 whitespace-pre-wrap">{formData.brandFirstImpression}</td>
+                </tr>
+              )}
+              {formData.visualsToAvoid && (
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 font-bold text-zinc-600">Elementos a evitar:</td>
+                  <td className="py-2 text-zinc-900">{formData.visualsToAvoid}</td>
+                </tr>
+              )}
+              {formData.brandPrimaryTouchpoints && (
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 font-bold text-zinc-600">Onde a marca será mais vista:</td>
+                  <td className="py-2 text-zinc-900">{formData.brandPrimaryTouchpoints}</td>
+                </tr>
+              )}
+              {formData.immediateDeliverables && (
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 font-bold text-zinc-600">Materiais imediatos prioritários:</td>
+                  <td className="py-2 text-zinc-900">{formData.immediateDeliverables}</td>
+                </tr>
+              )}
+              {formData.referenceLinks && (
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 font-bold text-zinc-600">Links de referências:</td>
+                  <td className="py-2 text-zinc-900">{formData.referenceLinks}</td>
+                </tr>
+              )}
+              {formData.deadlineOrLaunchDate && (
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 font-bold text-zinc-600">Prazo / Data de lançamento:</td>
+                  <td className="py-2 text-zinc-900">{formData.deadlineOrLaunchDate}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </section>
+      </div>
+    </div>
+
+      <div className="border-t border-zinc-300 mt-8 pt-2 text-center text-[10px] text-zinc-400 avoid-break hidden print:block">
+        <p>© {new Date().getFullYear()} Anderson José. Documento de Briefing Estratégico. Todos os direitos reservados.</p>
+      </div>
+    </>
   );
 }

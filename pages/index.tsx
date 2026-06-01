@@ -340,7 +340,7 @@ export default function BrandingBriefingForm() {
   return (
     <div className="min-h-screen selection:bg-brand-500/30">
       <Head>
-        <title>Briefing de Branding Avançado // Nexus Studio</title>
+        <title>Briefing de Branding Avançado // Anderson José</title>
         <meta name="description" content="Formulário avançado de briefing estratégico de branding." />
         <link rel="icon" href="/favicon.ico" />
       </Head>
@@ -356,8 +356,8 @@ export default function BrandingBriefingForm() {
                 <div className="h-9 w-9 rounded-lg bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-brand-500/20 group-hover:scale-105 transition-transform duration-300">
                   <Sparkles className="h-5 w-5 text-white animate-pulse-subtle" />
                 </div>
-                <span className="font-extrabold tracking-wider text-xl bg-clip-text text-transparent bg-gradient-to-r from-white via-zinc-200 to-zinc-400">
-                  NEXUS <span className="text-brand-400 font-light">//</span> STUDIO
+                <span className="font-extrabold tracking-wider text-lg bg-clip-text text-transparent bg-gradient-to-r from-white via-zinc-200 to-zinc-400">
+                  ANDERSON JOSÉ <span className="text-brand-400 font-light">//</span> BRANDING
                 </span>
               </div>
 
@@ -451,7 +451,7 @@ export default function BrandingBriefingForm() {
 
             {/* Rodapé */}
             <div className="hidden lg:block text-[11px] text-zinc-600">
-              &copy; {new Date().getFullYear()} Nexus Studio S.A. Todos os direitos reservados.
+              &copy; {new Date().getFullYear()} Anderson José. Todos os direitos reservados.
             </div>
           </div>
 
@@ -549,7 +549,7 @@ export default function BrandingBriefingForm() {
                           value={formData.logoName}
                           onChange={handleChange}
                           onBlur={handleBlur}
-                          placeholder="Ex: NEXUS Studio (Preferência por caixa alta em NEXUS)"
+                          placeholder="Ex: Anderson José (Preferência por caixa alta em ANDERSON)"
                           aria-required="true"
                           aria-invalid={!!errors.logoName}
                           aria-describedby={errors.logoName ? "logoName-error" : undefined}
@@ -1148,7 +1148,7 @@ export default function BrandingBriefingForm() {
 
             {/* Rodapé Mobile */}
             <div className="mt-12 text-center text-[10px] text-zinc-700 lg:hidden">
-              &copy; {new Date().getFullYear()} Nexus Studio S.A. Todos os direitos reservados.
+              &copy; {new Date().getFullYear()} Anderson José. Todos os direitos reservados.
             </div>
 
           </div>

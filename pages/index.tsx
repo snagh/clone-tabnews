@@ -256,6 +256,12 @@ export default function BrandingBriefingForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Se o usuário pressionar Enter em qualquer input antes da etapa 5, apenas avançamos de etapa em vez de submeter
+    if (currentStep < 5) {
+      handleNext();
+      return;
+    }
+    
     // Validate final step & general required fields
     if (!validateStep(1) || !validateStep(5)) {
       setCurrentStep(1); // Return to first step with error

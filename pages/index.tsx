@@ -418,6 +418,21 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
     document.body.removeChild(element);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
+    // Bloqueia o envio do formulário ao pressionar Enter em qualquer input da página
+    if (e.key === 'Enter') {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT') {
+        e.preventDefault(); // Impede o envio indesejado da página
+        
+        // Se estiver nas etapas 1 a 4, avança para a próxima etapa de forma limpa
+        if (currentStep < 5) {
+          handleNext();
+        }
+      }
+    }
+  };
+
   const handleReset = () => {
     setFormData(initialFormData);
     setErrors({});
@@ -629,7 +644,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
               </div>
             ) : (
               /* ================= MULTI-STEP WIZARD FORM ================= */
-              <form onSubmit={handleSubmit} noValidate className="space-y-8 animate-slide-up">
+              <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} noValidate className="space-y-8 animate-slide-up">
                 
                 {/* 1. PASSO: O BÁSICO */}
                 {currentStep === 1 && (

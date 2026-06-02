@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
+import Link from 'next/link';
 import { 
   Sparkles, 
   Building2, 
@@ -464,6 +465,22 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                 <span className="font-extrabold tracking-wider text-lg bg-clip-text text-transparent bg-gradient-to-r from-white via-zinc-200 to-zinc-400">
                   ANDERSON JOSÉ <span className="text-brand-400 font-light">//</span> BRANDING
                 </span>
+              </div>
+
+              {/* Seletor de Briefing */}
+              <div className="flex items-center gap-1 bg-zinc-900/80 border border-zinc-800 p-1 rounded-xl mb-8 w-fit">
+                <Link 
+                  href="/" 
+                  className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-brand-500 text-white shadow-md shadow-brand-500/10 transition-all"
+                >
+                  Branding
+                </Link>
+                <Link 
+                  href="/vendas" 
+                  className="px-3 py-1.5 rounded-lg text-[11px] font-semibold text-zinc-400 hover:text-zinc-200 transition-all"
+                >
+                  Gestão de Vendas
+                </Link>
               </div>
 
               {/* Informações Principais */}

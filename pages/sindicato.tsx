@@ -138,13 +138,9 @@ export default function UnionBriefingForm() {
       if (value.trim().length < 10) return 'Por favor, descreva em pelo menos 10 caracteres.';
     }
     
+    // Relaxed to allow any free-form references
     if (name === 'references' && value.trim()) {
-      const urlPattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/i;
-      if (!urlPattern.test(value.trim()) && !value.includes('http')) {
-        if (value.includes('.') || value.includes('/')) {
-          return 'Se for colocar uma URL de referência, insira em formato válido.';
-        }
-      }
+      return '';
     }
     
     return '';
@@ -291,10 +287,27 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
       return;
     }
     
-    if (!validateStep(1) || !validateStep(5)) {
+    // Validate final step & general required fields
+    const isStep1Valid = validateStep(1);
+    const isStep5Valid = validateStep(5);
+    
+    if (!isStep1Valid) {
       setCurrentStep(1);
       setTimeout(() => {
-        const errorField = document.getElementById('projectName');
+        const firstError = Object.keys(errors).find(key => 
+          ['projectName', 'currentProcess', 'mainBottlenecks'].includes(key)
+        );
+        const errorField = document.getElementById(firstError || 'projectName');
+        errorField?.focus();
+        errorField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+      return;
+    }
+    
+    if (!isStep5Valid) {
+      setCurrentStep(5);
+      setTimeout(() => {
+        const errorField = document.getElementById('references');
         errorField?.focus();
         errorField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 100);
@@ -377,10 +390,59 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
         </Head>
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* STICKY HEADER MOBILE */}
+          <header className="lg:hidden sticky top-0 z-40 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-900/60 px-4 py-3 shadow-lg -mx-4 sm:-mx-6 mb-4">
+            <div className="flex items-center justify-between gap-3 mb-2.5">
+              <div className="flex items-center gap-1.5">
+                <div className="h-6 w-6 rounded-md bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-500/10">
+                  <ShieldCheck className="h-3.5 w-3.5 text-white" />
+                </div>
+                <span className="font-extrabold tracking-wide text-xs bg-clip-text text-transparent bg-gradient-to-r from-white via-zinc-200 to-zinc-400">
+                  AJ <span className="text-brand-400 font-light">//</span> SINDICATO
+                </span>
+              </div>
+              {status.state !== 'success' && (
+                <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">
+                  Passo {currentStep}/5
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1 bg-zinc-900/60 border border-zinc-800 p-0.5 rounded-lg w-full overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <Link 
+                href="/" 
+                className="px-2.5 py-1 rounded-md text-[10px] font-semibold text-zinc-400 hover:text-zinc-200 transition-all"
+              >
+                Branding
+              </Link>
+              <Link 
+                href="/vendas" 
+                className="px-2.5 py-1 rounded-md text-[10px] font-semibold text-zinc-400 hover:text-zinc-200 transition-all"
+              >
+                Vendas
+              </Link>
+              <Link 
+                href="/sindicato" 
+                className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-brand-500 text-white shadow-sm transition-all"
+              >
+                Sindicato
+              </Link>
+            </div>
+
+            {status.state !== 'success' && (
+              <div className="w-full bg-zinc-900 rounded-full h-1 mt-2 overflow-hidden">
+                <div 
+                  className="bg-gradient-to-r from-blue-500 to-indigo-400 h-full rounded-full transition-all duration-300 ease-out" 
+                  style={{ width: `${progress}%` }} 
+                />
+              </div>
+            )}
+          </header>
+
           <div className="lg:grid lg:grid-cols-12 lg:gap-12 min-h-screen">
             
             {/* COLUNA ESQUERDA: Logo, Seletor e Menu Lateral */}
-            <div className="lg:col-span-5 lg:sticky lg:top-0 lg:h-screen flex flex-col justify-between py-12 lg:py-16 text-zinc-100 z-10">
+            <div className="hidden lg:flex lg:col-span-5 lg:sticky lg:top-0 lg:h-screen flex-col justify-between pt-12 pb-6 lg:py-16 text-zinc-100 z-10">
               <div>
                 {/* Logo */}
                 <div className="flex items-center gap-2 mb-8 group cursor-default">
@@ -430,7 +492,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
               <div className="space-y-6">
                 {/* Progresso Geral */}
                 {status.state !== 'success' && (
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-md shadow-2xl">
+                  <div className="hidden lg:block bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-md shadow-2xl">
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Preenchimento Geral</span>
                       <span className="text-xs font-bold text-blue-400">{progress}%</span>
@@ -450,7 +512,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
 
                 {/* Lista dos Passos Interativos */}
                 {status.state !== 'success' && (
-                  <nav className="space-y-3" aria-label="Navegação do formulário">
+                  <nav className="hidden lg:block space-y-3" aria-label="Navegação do formulário">
                     {STEPS.map((step) => {
                       const StepIcon = step.icon;
                       const isActive = currentStep === step.number;
@@ -509,7 +571,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
             </div>
 
             {/* COLUNA DIREITA: Container das Etapas e Form */}
-            <div className="lg:col-span-7 pb-16 pt-4 lg:pt-16 flex flex-col justify-center">
+            <div className="lg:col-span-7 pb-16 pt-2 lg:pt-16 flex flex-col justify-center">
               
               {status.state === 'success' ? (
                 /* ================= SUCCESS STATE CARD ================= */
@@ -591,6 +653,12 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                 /* ================= MULTI-STEP WIZARD FORM ================= */
                 <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} noValidate className="space-y-8 animate-slide-up">
                   
+                  {/* Stepper compacto para mobile */}
+                  <div className="lg:hidden flex items-center justify-between mb-4 bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-md">
+                    <span className="text-xs md:text-[11px] font-bold text-blue-400 uppercase tracking-wider">Passo {currentStep} de 5</span>
+                    <span className="text-sm md:text-xs font-semibold text-zinc-300">{STEPS[currentStep - 1].shortTitle}</span>
+                  </div>
+                  
                   {/* 1. PASSO: CONTEXTO E ROTINA ATUAL */}
                   {currentStep === 1 && (
                     <fieldset className="bg-white/5 border border-white/10 rounded-2xl p-6 md:p-8 backdrop-blur-md shadow-xl hover:border-white/15 transition-all duration-300">
@@ -600,7 +668,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                         </div>
                         <span>1. Contexto e Rotina Atual</span>
                       </legend>
-                      <p className="clear-left text-xs text-zinc-400 mb-8 border-b border-zinc-800/80 pb-4">
+                      <p className="clear-left text-sm md:text-xs text-zinc-400 mb-8 border-b border-zinc-800/80 pb-4">
                         {STEPS[0].description}
                       </p>
                       
@@ -608,10 +676,10 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                         {/* Project Name */}
                         <div>
                           <div className="flex justify-between items-baseline mb-2">
-                            <label htmlFor="projectName" className="block text-xs font-semibold text-zinc-300">
+                            <label htmlFor="projectName" className="block text-base md:text-sm font-semibold text-zinc-300">
                               Qual é o nome oficial do Sindicato ou do projeto? <span className="text-rose-500" aria-hidden="true">*</span>
                             </label>
-                            <span className="text-[10px] text-zinc-500">Obrigatório</span>
+                            <span className="text-xs md:text-[10px] text-zinc-500">Obrigatório</span>
                           </div>
                           <input
                             type="text"
@@ -624,14 +692,14 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                             aria-required="true"
                             aria-invalid={!!errors.projectName}
                             aria-describedby={errors.projectName ? "projectName-error" : undefined}
-                            className={`w-full bg-zinc-900/60 border rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 transition-all ${
+                            className={`w-full bg-zinc-900/60 border rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 transition-all ${
                               errors.projectName && touched.projectName
                                 ? 'border-rose-500/50 bg-rose-500/5 focus:border-rose-500'
                                 : 'border-zinc-800 focus:border-blue-500'
                             }`}
                           />
                           {errors.projectName && touched.projectName && (
-                            <div id="projectName-error" className="flex items-center gap-1.5 mt-2 text-[10px] text-rose-400 font-medium" role="alert">
+                            <div id="projectName-error" className="flex items-center gap-1.5 mt-2 text-xs md:text-[10px] text-rose-400 font-medium" role="alert">
                               <AlertCircle className="h-3 w-3" />
                               <span>{errors.projectName}</span>
                             </div>
@@ -641,10 +709,10 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                         {/* Current Process */}
                         <div>
                           <div className="flex justify-between items-baseline mb-2">
-                            <label htmlFor="currentProcess" className="block text-xs font-semibold text-zinc-300">
+                            <label htmlFor="currentProcess" className="block text-base md:text-sm font-semibold text-zinc-300">
                               Como é feito o controle de pagamentos e arrecadação dos filiados hoje? <span className="text-rose-500" aria-hidden="true">*</span>
                             </label>
-                            <span className="text-[10px] text-zinc-500">Mínimo 10 caracteres</span>
+                            <span className="text-xs md:text-[10px] text-zinc-500">Mínimo 10 caracteres</span>
                           </div>
                           <textarea
                             id="currentProcess"
@@ -657,14 +725,14 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                             aria-required="true"
                             aria-invalid={!!errors.currentProcess}
                             aria-describedby={errors.currentProcess ? "currentProcess-error" : undefined}
-                            className={`w-full bg-zinc-900/60 border rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 transition-all resize-y ${
+                            className={`w-full bg-zinc-900/60 border rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 transition-all resize-y ${
                               errors.currentProcess && touched.currentProcess
                                 ? 'border-rose-500/50 bg-rose-500/5 focus:border-rose-500'
                                 : 'border-zinc-800 focus:border-blue-500'
                             }`}
                           />
                           {errors.currentProcess && touched.currentProcess && (
-                            <div id="currentProcess-error" className="flex items-center gap-1.5 mt-2 text-[10px] text-rose-400 font-medium" role="alert">
+                            <div id="currentProcess-error" className="flex items-center gap-1.5 mt-2 text-xs md:text-[10px] text-rose-400 font-medium" role="alert">
                               <AlertCircle className="h-3 w-3" />
                               <span>{errors.currentProcess}</span>
                             </div>
@@ -674,10 +742,10 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                         {/* Main Bottlenecks */}
                         <div>
                           <div className="flex justify-between items-baseline mb-2">
-                            <label htmlFor="mainBottlenecks" className="block text-xs font-semibold text-zinc-300">
+                            <label htmlFor="mainBottlenecks" className="block text-base md:text-sm font-semibold text-zinc-300">
                               Quais são os maiores gargalos financeiros atuais que o sistema precisa resolver obrigatoriamente? <span className="text-rose-500" aria-hidden="true">*</span>
                             </label>
-                            <span className="text-[10px] text-zinc-500">Obrigatório</span>
+                            <span className="text-xs md:text-[10px] text-zinc-500">Obrigatório</span>
                           </div>
                           <textarea
                             id="mainBottlenecks"
@@ -690,14 +758,14 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                             aria-required="true"
                             aria-invalid={!!errors.mainBottlenecks}
                             aria-describedby={errors.mainBottlenecks ? "mainBottlenecks-error" : undefined}
-                            className={`w-full bg-zinc-900/60 border rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 transition-all resize-y ${
+                            className={`w-full bg-zinc-900/60 border rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 transition-all resize-y ${
                               errors.mainBottlenecks && touched.mainBottlenecks
                                 ? 'border-rose-500/50 bg-rose-500/5 focus:border-rose-500'
                                 : 'border-zinc-800 focus:border-blue-500'
                             }`}
                           />
                           {errors.mainBottlenecks && touched.mainBottlenecks && (
-                            <div id="mainBottlenecks-error" className="flex items-center gap-1.5 mt-2 text-[10px] text-rose-400 font-medium" role="alert">
+                            <div id="mainBottlenecks-error" className="flex items-center gap-1.5 mt-2 text-xs md:text-[10px] text-rose-400 font-medium" role="alert">
                               <AlertCircle className="h-3 w-3" />
                               <span>{errors.mainBottlenecks}</span>
                             </div>
@@ -716,14 +784,14 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                         </div>
                         <span>2. Fluxo Financeiro (O Core do Sistema)</span>
                       </legend>
-                      <p className="clear-left text-xs text-zinc-400 mb-8 border-b border-zinc-800/80 pb-4">
+                      <p className="clear-left text-sm md:text-xs text-zinc-400 mb-8 border-b border-zinc-800/80 pb-4">
                         {STEPS[1].description}
                       </p>
 
                       <div className="space-y-6">
                         {/* Payment Methods */}
                         <div>
-                          <label htmlFor="paymentMethods" className="block text-xs font-semibold text-zinc-300 mb-2">
+                          <label htmlFor="paymentMethods" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                             Quais serão os métodos de pagamento aceitos pelo sistema?
                           </label>
                           <textarea
@@ -733,13 +801,13 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                             onChange={handleChange}
                             rows={3}
                             placeholder="Ex: Pix automatizado com baixa imediata, Boleto Bancário e Cartão de Crédito recorrente."
-                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-blue-500 transition-all resize-y"
+                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-blue-500 transition-all resize-y"
                           />
                         </div>
 
                         {/* Billing Rules */}
                         <div>
-                          <label htmlFor="billingRules" className="block text-xs font-semibold text-zinc-300 mb-2">
+                          <label htmlFor="billingRules" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                             Como funcionam as cobranças do sindicato? (Recorrência, taxas pontuais, valores por categoria)
                           </label>
                           <textarea
@@ -749,13 +817,13 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                             onChange={handleChange}
                             rows={3}
                             placeholder="Ex: Mensalidades recorrentes. Motoristas autônomos pagam R$ 50/mês, e transportadoras pagam R$ 150/mês. Há também uma taxa anual de homologação de convenção."
-                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-blue-500 transition-all resize-y"
+                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-blue-500 transition-all resize-y"
                           />
                         </div>
 
                         {/* Overdue Actions */}
                         <div>
-                          <label htmlFor="overdueActions" className="block text-xs font-semibold text-zinc-300 mb-2">
+                          <label htmlFor="overdueActions" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                             O que o sistema deve fazer quando um pagamento atrasa?
                           </label>
                           <textarea
@@ -765,7 +833,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                             onChange={handleChange}
                             rows={3}
                             placeholder="Ex: Calcular juros diários de 0,33% e multa de 2%, enviar e-mail e WhatsApp automático após 2, 5 e 10 dias de atraso, e bloquear o download da carteirinha após 15 dias de atraso."
-                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-blue-500 transition-all resize-y"
+                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-blue-500 transition-all resize-y"
                           />
                         </div>
                       </div>
@@ -781,14 +849,14 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                         </div>
                         <span>3. Perfis de Usuário e Acessos</span>
                       </legend>
-                      <p className="clear-left text-xs text-zinc-400 mb-8 border-b border-zinc-800/80 pb-4">
+                      <p className="clear-left text-sm md:text-xs text-zinc-400 mb-8 border-b border-zinc-800/80 pb-4">
                         {STEPS[2].description}
                       </p>
 
                       <div className="space-y-6">
                         {/* Admin Profiles */}
                         <div>
-                          <label htmlFor="adminProfiles" className="block text-xs font-semibold text-zinc-300 mb-2">
+                          <label htmlFor="adminProfiles" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                             Quem vai operar o sistema internamente no Sindicato e quais os perfis de acesso?
                           </label>
                           <textarea
@@ -798,13 +866,13 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                             onChange={handleChange}
                             rows={3}
                             placeholder="Ex: Administrador Geral (acesso total), Setor Financeiro (vê pagamentos e gera relatórios) e Auditoria (apenas visualização dos lançamentos)."
-                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-blue-500 transition-all resize-y"
+                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-blue-500 transition-all resize-y"
                           />
                         </div>
 
                         {/* Member Portal */}
                         <div>
-                          <label htmlFor="memberPortal" className="block text-xs font-semibold text-zinc-300 mb-2">
+                          <label htmlFor="memberPortal" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                             O filiado (motorista/transportador) terá um portal próprio? Quais ações ele poderá fazer nele?
                           </label>
                           <textarea
@@ -814,7 +882,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                             onChange={handleChange}
                             rows={3}
                             placeholder="Ex: Sim, portal logado (CPF/CNPJ + senha). Nele ele pode atualizar os dados cadastrais, emitir 2ª via de boletos, pagar via PIX copiando o código e fazer o download da carteirinha digital."
-                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-blue-500 transition-all resize-y"
+                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-blue-500 transition-all resize-y"
                           />
                         </div>
                       </div>
@@ -830,14 +898,14 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                         </div>
                         <span>4. Integrações e Relatórios</span>
                       </legend>
-                      <p className="clear-left text-xs text-zinc-400 mb-8 border-b border-zinc-800/80 pb-4">
+                      <p className="clear-left text-sm md:text-xs text-zinc-400 mb-8 border-b border-zinc-800/80 pb-4">
                         {STEPS[3].description}
                       </p>
 
                       <div className="space-y-6">
                         {/* Receipts Generation */}
                         <div>
-                          <label htmlFor="receiptsGeneration" className="block text-xs font-semibold text-zinc-300 mb-2">
+                          <label htmlFor="receiptsGeneration" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                             O sistema precisa gerar Notas Fiscais ou Recibos automatizados?
                           </label>
                           <textarea
@@ -847,13 +915,13 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                             onChange={handleChange}
                             rows={3}
                             placeholder="Ex: Recibos automatizados enviados por e-mail após a confirmação. Notas fiscais de serviço (NFS-e) para as homologações pagas por transportadoras."
-                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-blue-500 transition-all resize-y"
+                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-blue-500 transition-all resize-y"
                           />
                         </div>
 
                         {/* Main Reports */}
                         <div>
-                          <label htmlFor="mainReports" className="block text-xs font-semibold text-zinc-300 mb-2">
+                          <label htmlFor="mainReports" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                             Quais relatórios são mais importantes para a diretoria visualizar no painel inicial (Dashboard)?
                           </label>
                           <textarea
@@ -863,13 +931,13 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                             onChange={handleChange}
                             rows={3}
                             placeholder="Ex: Receita arrecadada do mês corrente, Taxa de inadimplência ativa e Gráfico de Novos Filiados vs Desfiliações."
-                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-blue-500 transition-all resize-y"
+                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-blue-500 transition-all resize-y"
                           />
                         </div>
 
                         {/* External Systems */}
                         <div>
-                          <label htmlFor="externalSystems" className="block text-xs font-semibold text-zinc-300 mb-2">
+                          <label htmlFor="externalSystems" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                             Existe algum sistema externo com o qual precisaremos nos integrar? (Contabilidade, bancos, etc.)
                           </label>
                           <textarea
@@ -879,7 +947,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                             onChange={handleChange}
                             rows={3}
                             placeholder="Ex: Integração via arquivo de remessa/retorno ou API direta com o Banco do Brasil, e exportação mensal em Excel formatado para enviar ao sistema do contador."
-                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-blue-500 transition-all resize-y"
+                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-blue-500 transition-all resize-y"
                           />
                         </div>
                       </div>
@@ -902,7 +970,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                       <div className="space-y-6">
                         {/* Brand Identity */}
                         <div>
-                          <label htmlFor="brandIdentity" className="block text-xs font-semibold text-zinc-300 mb-2">
+                          <label htmlFor="brandIdentity" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                             Existe uma identidade visual, logotipo ou cores institucionais a seguir?
                           </label>
                           <textarea
@@ -912,17 +980,17 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                             onChange={handleChange}
                             rows={3}
                             placeholder="Ex: Sim, possuímos manual de marca. A cor principal é azul escuro (#0a2540) com detalhes em amarelo."
-                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-blue-500 transition-all resize-y"
+                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-blue-500 transition-all resize-y"
                           />
                         </div>
 
                         {/* References */}
                         <div>
                           <div className="flex justify-between items-baseline mb-2">
-                            <label htmlFor="references" className="block text-xs font-semibold text-zinc-300">
+                            <label htmlFor="references" className="block text-base md:text-sm font-semibold text-zinc-300">
                               Indique sistemas de pagamento ou painéis de gestão que você considera referências estéticas ou funcionais.
                             </label>
-                            <span className="text-[10px] text-zinc-500">Opcional</span>
+                            <span className="text-xs md:text-[10px] text-zinc-500">Opcional</span>
                           </div>
                           <textarea
                             id="references"
@@ -934,14 +1002,14 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                             placeholder="Ex: Gostamos do estilo limpo da dashboard do Asaas, e da simplicidade do fluxo de pagamento da Stripe..."
                             aria-invalid={!!errors.references}
                             aria-describedby={errors.references ? "references-error" : undefined}
-                            className={`w-full bg-zinc-900/60 border rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 transition-all resize-y ${
+                            className={`w-full bg-zinc-900/60 border rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 transition-all resize-y ${
                               errors.references && touched.references
                                 ? 'border-rose-500/50 bg-rose-500/5 focus:border-rose-500'
                                 : 'border-zinc-800 focus:border-blue-500'
                             }`}
                           />
                           {errors.references && touched.references && (
-                            <div id="references-error" className="flex items-center gap-1.5 mt-2 text-[10px] text-rose-400 font-medium" role="alert">
+                            <div id="references-error" className="flex items-center gap-1.5 mt-2 text-xs md:text-[10px] text-rose-400 font-medium" role="alert">
                               <AlertCircle className="h-3 w-3" />
                               <span>{errors.references}</span>
                             </div>
@@ -950,7 +1018,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
 
                         {/* Deadline */}
                         <div>
-                          <label htmlFor="deadline" className="block text-xs font-semibold text-zinc-300 mb-2">
+                          <label htmlFor="deadline" className="block text-xs md:text-sm font-semibold text-zinc-300 mb-2">
                             Qual é o prazo limite ideal ou a data planejada para o lançamento do sistema?
                           </label>
                           <input
@@ -960,7 +1028,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                             value={formData.deadline}
                             onChange={handleChange}
                             placeholder="Ex: Em até 3 meses, ou até o fim de setembro para coincidir com a próxima assembleia."
-                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-blue-500 transition-all"
+                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-blue-500 transition-all"
                           />
                         </div>
                       </div>
@@ -973,7 +1041,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                       type="button"
                       onClick={handleBack}
                       disabled={currentStep === 1 || status.state === 'loading'}
-                      className="inline-flex items-center justify-center gap-2 bg-zinc-900/60 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50 text-zinc-300 text-xs font-semibold py-3.5 px-6 rounded-xl active:scale-98 disabled:opacity-30 disabled:cursor-not-allowed disabled:active:scale-100 transition-all"
+                      className="inline-flex items-center justify-center gap-2 bg-zinc-900/60 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50 text-zinc-300 text-sm md:text-xs font-semibold py-3.5 px-6 rounded-xl active:scale-98 disabled:opacity-30 disabled:cursor-not-allowed disabled:active:scale-100 transition-all"
                     >
                       <ArrowLeft className="h-4 w-4" />
                       <span>Voltar</span>
@@ -983,7 +1051,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                       <button
                         type="button"
                         onClick={handleNext}
-                        className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-brand-600 hover:from-blue-500 hover:to-brand-500 text-white text-xs font-semibold py-3.5 px-8 rounded-xl shadow-lg active:scale-98 transition-all duration-300"
+                        className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-brand-600 hover:from-blue-500 hover:to-brand-500 text-white text-sm md:text-xs font-semibold py-3.5 px-8 rounded-xl shadow-lg active:scale-98 transition-all duration-300"
                       >
                         <span>Continuar</span>
                         <ArrowRight className="h-4 w-4" />
@@ -992,7 +1060,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                       <button
                         type="submit"
                         disabled={status.state === 'loading'}
-                        className="group inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-brand-600 hover:from-blue-500 hover:to-brand-500 text-white text-xs font-semibold py-3.5 px-10 rounded-xl shadow-lg hover:shadow-blue-500/25 active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                        className="group inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-brand-600 hover:from-blue-500 hover:to-brand-500 text-white text-sm md:text-xs font-semibold py-3.5 px-10 rounded-xl shadow-lg hover:shadow-blue-500/25 active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
                       >
                         {status.state === 'loading' ? (
                           <>

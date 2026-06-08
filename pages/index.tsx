@@ -151,12 +151,9 @@ export default function BrandingBriefingForm() {
       if (value.trim().length < 10) return 'Por favor, descreva em pelo menos 10 caracteres.';
     }
     
-    // Step 5 URL Field Validation
+    // Step 5 URL Field Validation - Relaxed to allow free-form references
     if (name === 'referenceLinks' && value.trim()) {
-      const urlPattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/i;
-      if (!urlPattern.test(value.trim())) {
-        return 'Insira uma URL válida (ex: pinterest.com/pasta ou instagram.com/marca).';
-      }
+      return '';
     }
     
     return '';
@@ -193,10 +190,6 @@ export default function BrandingBriefingForm() {
              formData.logoName.trim().length >= 2 &&
              formData.businessDescription.trim().length >= 10 &&
              formData.rebrandingReason.trim().length >= 10;
-    }
-    if (stepNum === 5 && formData.referenceLinks.trim()) {
-      const urlPattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/i;
-      return urlPattern.test(formData.referenceLinks.trim());
     }
     return true;
   };
@@ -264,10 +257,26 @@ export default function BrandingBriefingForm() {
     }
     
     // Validate final step & general required fields
-    if (!validateStep(1) || !validateStep(5)) {
-      setCurrentStep(1); // Return to first step with error
+    const isStep1Valid = validateStep(1);
+    const isStep5Valid = validateStep(5);
+    
+    if (!isStep1Valid) {
+      setCurrentStep(1);
       setTimeout(() => {
-        const errorField = document.getElementById('logoName');
+        const firstError = Object.keys(errors).find(key => 
+          ['logoName', 'businessDescription', 'rebrandingReason'].includes(key)
+        );
+        const errorField = document.getElementById(firstError || 'logoName');
+        errorField?.focus();
+        errorField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+      return;
+    }
+    
+    if (!isStep5Valid) {
+      setCurrentStep(5);
+      setTimeout(() => {
+        const errorField = document.getElementById('referenceLinks');
         errorField?.focus();
         errorField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 100);
@@ -492,10 +501,59 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
       </Head>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* STICKY HEADER MOBILE */}
+        <header className="lg:hidden sticky top-0 z-40 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-900/60 px-4 py-3 shadow-lg -mx-4 sm:-mx-6 mb-4">
+          <div className="flex items-center justify-between gap-3 mb-2.5">
+            <div className="flex items-center gap-1.5">
+              <div className="h-6 w-6 rounded-md bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center shadow-md shadow-brand-500/10">
+                <Sparkles className="h-3.5 w-3.5 text-white" />
+              </div>
+              <span className="font-extrabold tracking-wide text-xs bg-clip-text text-transparent bg-gradient-to-r from-white via-zinc-200 to-zinc-400">
+                AJ <span className="text-brand-400 font-light">//</span> BRANDING
+              </span>
+            </div>
+            {status.state !== 'success' && (
+              <span className="text-[10px] font-bold text-brand-400 uppercase tracking-widest bg-brand-500/10 px-2 py-0.5 rounded-md border border-brand-500/20">
+                Passo {currentStep}/5
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1 bg-zinc-900/60 border border-zinc-800 p-0.5 rounded-lg w-full overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <Link 
+              href="/" 
+              className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-brand-500 text-white shadow-sm transition-all"
+            >
+              Branding
+            </Link>
+            <Link 
+              href="/vendas" 
+              className="px-2.5 py-1 rounded-md text-[10px] font-semibold text-zinc-400 hover:text-zinc-200 transition-all"
+            >
+              Vendas
+            </Link>
+            <Link 
+              href="/sindicato" 
+              className="px-2.5 py-1 rounded-md text-[10px] font-semibold text-zinc-400 hover:text-zinc-200 transition-all"
+            >
+              Sindicato
+            </Link>
+          </div>
+
+          {status.state !== 'success' && (
+            <div className="w-full bg-zinc-900 rounded-full h-1 mt-2 overflow-hidden">
+              <div 
+                className="bg-gradient-to-r from-brand-500 to-indigo-400 h-full rounded-full transition-all duration-300 ease-out" 
+                style={{ width: `${progress}%` }} 
+              />
+            </div>
+          )}
+        </header>
+
         <div className="lg:grid lg:grid-cols-12 lg:gap-12 min-h-screen">
           
           {/* COLUNA ESQUERDA: Logo, Slogan e Menu do Navegador Multietapas */}
-          <div className="lg:col-span-5 lg:sticky lg:top-0 lg:h-screen flex flex-col justify-between py-12 lg:py-16 text-zinc-100 z-10">
+          <div className="hidden lg:flex lg:col-span-5 lg:sticky lg:top-0 lg:h-screen flex-col justify-between pt-12 pb-6 lg:py-16 text-zinc-100 z-10">
             <div>
               {/* Logo */}
               <div className="flex items-center gap-2 mb-8 group cursor-default">
@@ -545,7 +603,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
             <div className="space-y-6">
               {/* Progresso Geral */}
               {status.state !== 'success' && (
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-md shadow-2xl">
+                <div className="hidden lg:block bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-md shadow-2xl">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Preenchimento Geral</span>
                     <span className="text-xs font-bold text-brand-400">{progress}%</span>
@@ -565,7 +623,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
 
               {/* Lista dos Passos Interativos */}
               {status.state !== 'success' && (
-                <nav className="space-y-3" aria-label="Navegação do formulário">
+                <nav className="hidden lg:block space-y-3" aria-label="Navegação do formulário">
                   {STEPS.map((step) => {
                     const StepIcon = step.icon;
                     const isActive = currentStep === step.number;
@@ -624,7 +682,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
           </div>
 
           {/* COLUNA DIREITA: Container das Etapas e Form */}
-          <div className="lg:col-span-7 pb-16 pt-4 lg:pt-16 flex flex-col justify-center">
+          <div className="lg:col-span-7 pb-16 pt-2 lg:pt-16 flex flex-col justify-center">
             
             {status.state === 'success' ? (
               /* ================= SUCEESS STATE CARD ================= */
@@ -709,6 +767,12 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
               /* ================= MULTI-STEP WIZARD FORM ================= */
               <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} noValidate className="space-y-8 animate-slide-up">
                 
+                {/* Stepper compacto para mobile */}
+                <div className="lg:hidden flex items-center justify-between mb-4 bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-md">
+                  <span className="text-[11px] font-bold text-brand-400 uppercase tracking-wider">Passo {currentStep} de 5</span>
+                  <span className="text-xs font-semibold text-zinc-300">{STEPS[currentStep - 1].shortTitle}</span>
+                </div>
+                
                 {/* 1. PASSO: O BÁSICO */}
                 {currentStep === 1 && (
                   <fieldset className="bg-white/5 border border-white/10 rounded-2xl p-6 md:p-8 backdrop-blur-md shadow-xl hover:border-white/15 transition-all duration-300">
@@ -718,7 +782,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                       </div>
                       <span>1. O Básico (Estrutura e Escopo)</span>
                     </legend>
-                    <p className="clear-left text-xs text-zinc-400 mb-8 border-b border-zinc-800/80 pb-4">
+                    <p className="clear-left text-sm md:text-xs text-zinc-400 mb-8 border-b border-zinc-800/80 pb-4">
                       {STEPS[0].description}
                     </p>
                     
@@ -726,10 +790,10 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                       {/* Logo Name */}
                       <div>
                         <div className="flex justify-between items-baseline mb-2">
-                          <label htmlFor="logoName" className="block text-xs font-semibold text-zinc-300">
+                          <label htmlFor="logoName" className="block text-base md:text-sm font-semibold text-zinc-300">
                             Qual é o nome exato que deve constar no logo? <span className="text-rose-500" aria-hidden="true">*</span>
                           </label>
-                          <span className="text-[10px] text-zinc-500">Obrigatório</span>
+                          <span className="text-xs md:text-[10px] text-zinc-500">Obrigatório</span>
                         </div>
                         <input
                           type="text"
@@ -742,14 +806,14 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                           aria-required="true"
                           aria-invalid={!!errors.logoName}
                           aria-describedby={errors.logoName ? "logoName-error" : undefined}
-                          className={`w-full bg-zinc-900/60 border rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 transition-all ${
+                          className={`w-full bg-zinc-900/60 border rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 transition-all ${
                             errors.logoName && touched.logoName
                               ? 'border-rose-500/50 bg-rose-500/5 focus:border-rose-500'
                               : 'border-zinc-800 focus:border-brand-500'
                           }`}
                         />
                         {errors.logoName && touched.logoName && (
-                          <div id="logoName-error" className="flex items-center gap-1.5 mt-2 text-[10px] text-rose-400 font-medium" role="alert">
+                          <div id="logoName-error" className="flex items-center gap-1.5 mt-2 text-xs md:text-[10px] text-rose-400 font-medium" role="alert">
                             <AlertCircle className="h-3 w-3" />
                             <span>{errors.logoName}</span>
                           </div>
@@ -758,7 +822,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
 
                       {/* Slogan */}
                       <div>
-                        <label htmlFor="slogan" className="block text-xs font-semibold text-zinc-300 mb-2">
+                        <label htmlFor="slogan" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                           A marca possui algum slogan ou frase de apoio? Deve estar junto ao logo?
                         </label>
                         <input
@@ -768,17 +832,17 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                           value={formData.slogan}
                           onChange={handleChange}
                           placeholder="Ex: 'Moldando o amanhã'. Sim, preferencialmente abaixo do logo."
-                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-brand-500 transition-all"
+                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-brand-500 transition-all"
                         />
                       </div>
 
                       {/* Business Description */}
                       <div>
                         <div className="flex justify-between items-baseline mb-2">
-                          <label htmlFor="businessDescription" className="block text-xs font-semibold text-zinc-300">
+                          <label htmlFor="businessDescription" className="block text-base md:text-sm font-semibold text-zinc-300">
                             Em um ou dois parágrafos, explique: o que a empresa faz e quais os serviços principais? <span className="text-rose-500" aria-hidden="true">*</span>
                           </label>
-                          <span className="text-[10px] text-zinc-500">Mínimo 10 caracteres</span>
+                          <span className="text-xs md:text-[10px] text-zinc-500">Mínimo 10 caracteres</span>
                         </div>
                         <textarea
                           id="businessDescription"
@@ -791,14 +855,14 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                           aria-required="true"
                           aria-invalid={!!errors.businessDescription}
                           aria-describedby={errors.businessDescription ? "businessDescription-error" : undefined}
-                          className={`w-full bg-zinc-900/60 border rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 transition-all resize-y ${
+                          className={`w-full bg-zinc-900/60 border rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 transition-all resize-y ${
                             errors.businessDescription && touched.businessDescription
                               ? 'border-rose-500/50 bg-rose-500/5 focus:border-rose-500'
                               : 'border-zinc-800 focus:border-brand-500'
                           }`}
                         />
                         {errors.businessDescription && touched.businessDescription && (
-                          <div id="businessDescription-error" className="flex items-center gap-1.5 mt-2 text-[10px] text-rose-400 font-medium" role="alert">
+                          <div id="businessDescription-error" className="flex items-center gap-1.5 mt-2 text-xs md:text-[10px] text-rose-400 font-medium" role="alert">
                             <AlertCircle className="h-3 w-3" />
                             <span>{errors.businessDescription}</span>
                           </div>
@@ -808,10 +872,10 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                       {/* Rebranding Reason */}
                       <div>
                         <div className="flex justify-between items-baseline mb-2">
-                          <label htmlFor="rebrandingReason" className="block text-xs font-semibold text-zinc-300">
+                          <label htmlFor="rebrandingReason" className="block text-base md:text-sm font-semibold text-zinc-300">
                             Por que você decidiu buscar uma nova identidade visual (rebranding) neste exato momento? <span className="text-rose-500" aria-hidden="true">*</span>
                           </label>
-                          <span className="text-[10px] text-zinc-500">Obrigatório</span>
+                          <span className="text-xs md:text-[10px] text-zinc-500">Obrigatório</span>
                         </div>
                         <textarea
                           id="rebrandingReason"
@@ -824,14 +888,14 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                           aria-required="true"
                           aria-invalid={!!errors.rebrandingReason}
                           aria-describedby={errors.rebrandingReason ? "rebrandingReason-error" : undefined}
-                          className={`w-full bg-zinc-900/60 border rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 transition-all resize-y ${
+                          className={`w-full bg-zinc-900/60 border rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 transition-all resize-y ${
                             errors.rebrandingReason && touched.rebrandingReason
                               ? 'border-rose-500/50 bg-rose-500/5 focus:border-rose-500'
                               : 'border-zinc-800 focus:border-brand-500'
                           }`}
                         />
                         {errors.rebrandingReason && touched.rebrandingReason && (
-                          <div id="rebrandingReason-error" className="flex items-center gap-1.5 mt-2 text-[10px] text-rose-400 font-medium" role="alert">
+                          <div id="rebrandingReason-error" className="flex items-center gap-1.5 mt-2 text-xs md:text-[10px] text-rose-400 font-medium" role="alert">
                             <AlertCircle className="h-3 w-3" />
                             <span>{errors.rebrandingReason}</span>
                           </div>
@@ -840,7 +904,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
 
                       {/* Current Brand Issues */}
                       <div>
-                        <label htmlFor="currentBrandIssues" className="block text-xs font-semibold text-zinc-300 mb-2">
+                        <label htmlFor="currentBrandIssues" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                           O que você sente que não funciona mais ou te incomoda profundamente na marca atual?
                         </label>
                         <textarea
@@ -850,13 +914,13 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                           onChange={handleChange}
                           rows={3}
                           placeholder="Ex: A logo atual parece muito infantil, e as cores parecem desbotadas e antiquadas."
-                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-brand-500 transition-all resize-y"
+                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-brand-500 transition-all resize-y"
                         />
                       </div>
 
                       {/* Keep From Old Identity */}
                       <div>
-                        <label htmlFor="keepFromOldIdentity" className="block text-xs font-semibold text-zinc-300 mb-2">
+                        <label htmlFor="keepFromOldIdentity" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                           Existe algo da identidade antiga que deve ser obrigatoriamente mantido?
                         </label>
                         <input
@@ -866,7 +930,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                           value={formData.keepFromOldIdentity}
                           onChange={handleChange}
                           placeholder="Ex: Manter a cor azul principal, ou manter o símbolo de estrela."
-                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-brand-500 transition-all"
+                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-brand-500 transition-all"
                         />
                       </div>
                     </div>
@@ -882,14 +946,14 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                       </div>
                       <span>2. Raio-X do Negócio (Posicionamento Oculto)</span>
                     </legend>
-                    <p className="clear-left text-xs text-zinc-400 mb-8 border-b border-zinc-800/80 pb-4">
+                    <p className="clear-left text-sm md:text-xs text-zinc-400 mb-8 border-b border-zinc-800/80 pb-4">
                       {STEPS[1].description}
                     </p>
 
                     <div className="space-y-6">
                       {/* Company History */}
                       <div>
-                        <label htmlFor="companyHistory" className="block text-xs font-semibold text-zinc-300 mb-2">
+                        <label htmlFor="companyHistory" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                           Qual é a história, motivação ou inspiração principal por trás do surgimento da empresa?
                         </label>
                         <textarea
@@ -899,13 +963,13 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                           onChange={handleChange}
                           rows={3}
                           placeholder="Nos conte como tudo começou. O que inspirou a criação da empresa?"
-                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-brand-500 transition-all resize-y"
+                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-brand-500 transition-all resize-y"
                         />
                       </div>
 
                       {/* Why Choose Us */}
                       <div>
-                        <label htmlFor="whyChooseUs" className="block text-xs font-semibold text-zinc-300 mb-2">
+                        <label htmlFor="whyChooseUs" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                           Por que o seu cliente favorito escolheu comprar de você e não do seu concorrente?
                         </label>
                         <textarea
@@ -915,13 +979,13 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                           onChange={handleChange}
                           rows={3}
                           placeholder="Qual diferencial único ele enxerga no seu serviço/atendimento?"
-                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-brand-500 transition-all resize-y"
+                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-brand-500 transition-all resize-y"
                         />
                       </div>
 
                       {/* Worst Complaint */}
                       <div>
-                        <label htmlFor="worstComplaint" className="block text-xs font-semibold text-zinc-300 mb-2">
+                        <label htmlFor="worstComplaint" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                           Se um cliente fosse reclamar da empresa, qual seria a pior frase que machucaria seu orgulho?
                         </label>
                         <textarea
@@ -931,13 +995,13 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                           onChange={handleChange}
                           rows={3}
                           placeholder="Ex: 'Eles cobram caro mas o produto parece comum e sem identidade...'"
-                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-brand-500 transition-all resize-y"
+                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-brand-500 transition-all resize-y"
                         />
                       </div>
 
                       {/* Brand Positioning Statement */}
                       <div>
-                        <label htmlFor="brandPositioningStatement" className="block text-xs font-semibold text-zinc-300 mb-2">
+                        <label htmlFor="brandPositioningStatement" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                           Complete a frase: &quot;Eu prefiro que a minha marca seja conhecida por ser [A] do que por ser [B].&quot;
                         </label>
                         <input
@@ -947,7 +1011,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                           value={formData.brandPositioningStatement}
                           onChange={handleChange}
                           placeholder="Ex: conhecida por ser Inovadora do que por ser Barata."
-                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-brand-500 transition-all"
+                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-brand-500 transition-all"
                         />
                       </div>
                     </div>
@@ -963,14 +1027,14 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                       </div>
                       <span>3. Público-Alvo e Concorrência</span>
                     </legend>
-                    <p className="clear-left text-xs text-zinc-400 mb-8 border-b border-zinc-800/80 pb-4">
+                    <p className="clear-left text-sm md:text-xs text-zinc-400 mb-8 border-b border-zinc-800/80 pb-4">
                       {STEPS[2].description}
                     </p>
 
                     <div className="space-y-6">
                       {/* Target Audience */}
                       <div>
-                        <label htmlFor="targetAudience" className="block text-xs font-semibold text-zinc-300 mb-2">
+                        <label htmlFor="targetAudience" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                           Quem é o seu cliente ideal? (Descreva idade, profissão, estilo de vida e interesses)
                         </label>
                         <textarea
@@ -980,13 +1044,13 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                           onChange={handleChange}
                           rows={3}
                           placeholder="Ex: Profissionais liberais de 28-45 anos, buscam otimização de tempo, consomem marcas sustentáveis..."
-                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-brand-500 transition-all resize-y"
+                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-brand-500 transition-all resize-y"
                         />
                       </div>
 
                       {/* Customer Pain Points */}
                       <div>
-                        <label htmlFor="customerPainPoints" className="block text-xs font-semibold text-zinc-300 mb-2">
+                        <label htmlFor="customerPainPoints" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                           Qual é a principal &quot;dor&quot; (problema ou desejo) do seu cliente que seu negócio resolve?
                         </label>
                         <textarea
@@ -996,13 +1060,13 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                           onChange={handleChange}
                           rows={3}
                           placeholder="Ex: Falta de transparência nos processos de outras agências. Ele quer um serviço rápido e confiável."
-                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-brand-500 transition-all resize-y"
+                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-brand-500 transition-all resize-y"
                         />
                       </div>
 
                       {/* Competitors Analysis */}
                       <div>
-                        <label htmlFor="competitorsAnalysis" className="block text-xs font-semibold text-zinc-300 mb-2">
+                        <label htmlFor="competitorsAnalysis" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                           Quem são seus concorrentes (diretos e indiretos)? Comente o que admira ou abomina neles.
                         </label>
                         <textarea
@@ -1012,7 +1076,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                           onChange={handleChange}
                           rows={3}
                           placeholder="Ex: Concorrente X (admiro a rapidez, abomino o atendimento ruim); Concorrente Y (logo antiquada)..."
-                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-brand-500 transition-all resize-y"
+                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-brand-500 transition-all resize-y"
                         />
                       </div>
                     </div>
@@ -1028,14 +1092,14 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                       </div>
                       <span>4. Personalidade da Marca (Extração Psicológica)</span>
                     </legend>
-                    <p className="clear-left text-xs text-zinc-400 mb-8 border-b border-zinc-800/80 pb-4">
+                    <p className="clear-left text-sm md:text-xs text-zinc-400 mb-8 border-b border-zinc-800/80 pb-4">
                       {STEPS[3].description}
                     </p>
 
                     <div className="space-y-6">
                       {/* Brand Party Hosting */}
                       <div>
-                        <label htmlFor="brandPartyHosting" className="block text-xs font-semibold text-zinc-300 mb-2">
+                        <label htmlFor="brandPartyHosting" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                           Se a marca fosse anfitriã de uma festa, onde seria, que música tocaria e o que serviriam?
                         </label>
                         <textarea
@@ -1045,13 +1109,13 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                           onChange={handleChange}
                           rows={3}
                           placeholder="Ex: Seria em um rooftop moderno ao entardecer, tocando Jazz/Lo-fi, servindo drinks autorais e finger-foods."
-                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-brand-500 transition-all resize-y"
+                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-brand-500 transition-all resize-y"
                         />
                       </div>
 
                       {/* Brand Persona Avatar */}
                       <div>
-                        <label htmlFor="brandPersonaAvatar" className="block text-xs font-semibold text-zinc-300 mb-2">
+                        <label htmlFor="brandPersonaAvatar" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                           Se a empresa fosse uma pessoa famosa ou personagem de filme, quem seria e por quê?
                         </label>
                         <textarea
@@ -1061,13 +1125,13 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                           onChange={handleChange}
                           rows={3}
                           placeholder="Ex: Steve Jobs pela simplicidade e foco na inovação; ou Tony Stark pelo tom tecnológico e arrojado."
-                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-brand-500 transition-all resize-y"
+                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-brand-500 transition-all resize-y"
                         />
                       </div>
 
                       {/* Brand Communication Tone (Interactive Select Cards!) */}
                       <div>
-                        <span className="block text-xs font-semibold text-zinc-300 mb-3">
+                        <span className="block text-base md:text-sm font-semibold text-zinc-300 mb-3">
                           Como a marca se comunica com o cliente? (Escolha o tom de voz principal)
                         </span>
                         
@@ -1110,8 +1174,8 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                               >
                                 <CardIcon className={`h-5 w-5 ${isSelected ? 'text-brand-400' : 'text-zinc-500'}`} />
                                 <div>
-                                  <p className="text-xs font-bold text-white mb-1">{card.title}</p>
-                                  <p className="text-[10px] text-zinc-500 leading-normal">{card.desc}</p>
+                                  <p className="text-sm md:text-xs font-bold text-white mb-1">{card.title}</p>
+                                  <p className="text-xs md:text-[10px] text-zinc-500 leading-normal">{card.desc}</p>
                                 </div>
                               </button>
                             );
@@ -1121,7 +1185,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
 
                       {/* Brand Desirable Adjectives */}
                       <div>
-                        <label htmlFor="brandDesirableAdjectives" className="block text-xs font-semibold text-zinc-300 mb-2">
+                        <label htmlFor="brandDesirableAdjectives" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                           Escolha 3 a 5 adjetivos que melhor representam a imagem a ser transmitida.
                         </label>
                         <input
@@ -1131,13 +1195,13 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                           value={formData.brandDesirableAdjectives}
                           onChange={handleChange}
                           placeholder="Ex: Minimalista, Sofisticado, Transparente, Ágil."
-                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-brand-500 transition-all"
+                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-brand-500 transition-all"
                         />
                       </div>
 
                       {/* Brand Undesirable Adjectives */}
                       <div>
-                        <label htmlFor="brandUndesirableAdjectives" className="block text-xs font-semibold text-zinc-300 mb-2">
+                        <label htmlFor="brandUndesirableAdjectives" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                           Escolha 3 adjetivos que a sua marca definitivamente NÃO é.
                         </label>
                         <input
@@ -1147,7 +1211,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                           value={formData.brandUndesirableAdjectives}
                           onChange={handleChange}
                           placeholder="Ex: Infantil, Barata, Burocrática, Lenta."
-                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-brand-500 transition-all"
+                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-brand-500 transition-all"
                         />
                       </div>
                     </div>
@@ -1163,14 +1227,14 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                       </div>
                       <span>5. Direção Visual e Entregáveis (A Aplicação Prática)</span>
                     </legend>
-                    <p className="clear-left text-xs text-zinc-400 mb-8 border-b border-zinc-800/80 pb-4">
+                    <p className="clear-left text-sm md:text-xs text-zinc-400 mb-8 border-b border-zinc-800/80 pb-4">
                       {STEPS[4].description}
                     </p>
 
                     <div className="space-y-6">
                       {/* Brand First Impression */}
                       <div>
-                        <label htmlFor="brandFirstImpression" className="block text-xs font-semibold text-zinc-300 mb-2">
+                        <label htmlFor="brandFirstImpression" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                           Qual é a primeira sensação/emoção que o cliente deve sentir ao bater o olho na marca?
                         </label>
                         <textarea
@@ -1180,13 +1244,13 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                           onChange={handleChange}
                           rows={2}
                           placeholder="Ex: Confiança imediata, segurança, autoridade extrema ou deslumbramento visual..."
-                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-brand-500 transition-all resize-y"
+                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-brand-500 transition-all resize-y"
                         />
                       </div>
 
                       {/* Visuals to Avoid */}
                       <div>
-                        <label htmlFor="visualsToAvoid" className="block text-xs font-semibold text-zinc-300 mb-2">
+                        <label htmlFor="visualsToAvoid" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                           Existe alguma cor, forma ou elemento visual que você odeia e que devemos evitar a todo custo?
                         </label>
                         <input
@@ -1196,13 +1260,13 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                           value={formData.visualsToAvoid}
                           onChange={handleChange}
                           placeholder="Ex: Evitar degradês multicoloridos, cor laranja, símbolos de folha..."
-                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-brand-500 transition-all"
+                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-brand-500 transition-all"
                         />
                       </div>
 
                       {/* Brand Primary Touchpoints */}
                       <div>
-                        <label htmlFor="brandPrimaryTouchpoints" className="block text-xs font-semibold text-zinc-300 mb-2">
+                        <label htmlFor="brandPrimaryTouchpoints" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                           Onde a sua marca será mais vista no dia a dia? (Ex: Fachada física, Instagram, uniformes, site...)
                         </label>
                         <input
@@ -1212,13 +1276,13 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                           value={formData.brandPrimaryTouchpoints}
                           onChange={handleChange}
                           placeholder="Ex: Instagram da marca, site da plataforma Web, crachás e caixas de papelão."
-                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-brand-500 transition-all"
+                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-brand-500 transition-all"
                         />
                       </div>
 
                       {/* Immediate Deliverables */}
                       <div>
-                        <label htmlFor="immediateDeliverables" className="block text-xs font-semibold text-zinc-300 mb-2">
+                        <label htmlFor="immediateDeliverables" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                           Quais são os materiais prioritários que você precisa de imediato junto com a marca?
                         </label>
                         <input
@@ -1228,17 +1292,17 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                           value={formData.immediateDeliverables}
                           onChange={handleChange}
                           placeholder="Ex: Capa do Linkedin, template para posts de feed de Instagram, papel timbrado."
-                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-brand-500 transition-all"
+                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-brand-500 transition-all"
                         />
                       </div>
 
                       {/* Reference Links */}
                       <div>
                         <div className="flex justify-between items-baseline mb-2">
-                          <label htmlFor="referenceLinks" className="block text-xs font-semibold text-zinc-300">
+                          <label htmlFor="referenceLinks" className="block text-base md:text-sm font-semibold text-zinc-300">
                             Cole aqui links de referências visuais (Pinterest, Behance, Perfis de marcas que admira...)
                           </label>
-                          <span className="text-[10px] text-zinc-500">URL opcional</span>
+                          <span className="text-xs md:text-[10px] text-zinc-500">URL opcional</span>
                         </div>
                         <input
                           type="url"
@@ -1250,14 +1314,14 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                           placeholder="Ex: https://pinterest.com/exemplo ou behance.net/design-referencia"
                           aria-invalid={!!errors.referenceLinks}
                           aria-describedby={errors.referenceLinks ? "referenceLinks-error" : undefined}
-                          className={`w-full bg-zinc-900/60 border rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 transition-all ${
+                          className={`w-full bg-zinc-900/60 border rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 transition-all ${
                             errors.referenceLinks && touched.referenceLinks
                               ? 'border-rose-500/50 bg-rose-500/5 focus:border-rose-500'
                               : 'border-zinc-800 focus:border-brand-500'
                           }`}
                         />
                         {errors.referenceLinks && touched.referenceLinks && (
-                          <div id="referenceLinks-error" className="flex items-center gap-1.5 mt-2 text-[10px] text-rose-400 font-medium" role="alert">
+                          <div id="referenceLinks-error" className="flex items-center gap-1.5 mt-2 text-xs md:text-[10px] text-rose-400 font-medium" role="alert">
                             <AlertCircle className="h-3 w-3" />
                             <span>{errors.referenceLinks}</span>
                           </div>
@@ -1266,7 +1330,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
 
                       {/* Deadline or Launch Date */}
                       <div>
-                        <label htmlFor="deadlineOrLaunchDate" className="block text-xs font-semibold text-zinc-300 mb-2">
+                        <label htmlFor="deadlineOrLaunchDate" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                           Existe um prazo limite ou uma data de lançamento (evento/inauguração) estipulada?
                         </label>
                         <input
@@ -1276,7 +1340,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                           value={formData.deadlineOrLaunchDate}
                           onChange={handleChange}
                           placeholder="Ex: Lançamento em 10 de Setembro na convenção anual da empresa."
-                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-brand-500 transition-all"
+                          className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-brand-500 transition-all"
                         />
                       </div>
                     </div>
@@ -1297,7 +1361,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                     type="button"
                     onClick={handleBack}
                     disabled={currentStep === 1 || status.state === 'loading'}
-                    className="inline-flex items-center justify-center gap-2 bg-zinc-900/60 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50 text-zinc-300 text-xs font-semibold py-3.5 px-6 rounded-xl active:scale-98 disabled:opacity-30 disabled:cursor-not-allowed disabled:active:scale-100 transition-all"
+                    className="inline-flex items-center justify-center gap-2 bg-zinc-900/60 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50 text-zinc-300 text-sm md:text-xs font-semibold py-3.5 px-6 rounded-xl active:scale-98 disabled:opacity-30 disabled:cursor-not-allowed disabled:active:scale-100 transition-all"
                   >
                     <ArrowLeft className="h-4 w-4" />
                     <span>Voltar</span>
@@ -1307,7 +1371,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                     <button
                       type="button"
                       onClick={handleNext}
-                      className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white text-xs font-semibold py-3.5 px-8 rounded-xl shadow-lg active:scale-98 transition-all duration-300"
+                      className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white text-sm md:text-xs font-semibold py-3.5 px-8 rounded-xl shadow-lg active:scale-98 transition-all duration-300"
                     >
                       <span>Continuar</span>
                       <ArrowRight className="h-4 w-4" />
@@ -1316,7 +1380,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                     <button
                       type="submit"
                       disabled={status.state === 'loading'}
-                      className="group inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white text-xs font-semibold py-3.5 px-10 rounded-xl shadow-lg hover:shadow-brand-500/25 active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                      className="group inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white text-sm md:text-xs font-semibold py-3.5 px-10 rounded-xl shadow-lg hover:shadow-brand-500/25 active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
                     >
                       {status.state === 'loading' ? (
                         <>

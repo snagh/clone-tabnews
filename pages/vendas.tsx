@@ -133,14 +133,9 @@ export default function SalesBriefingForm() {
       if (value.trim().length < 10) return 'Por favor, descreva em pelo menos 10 caracteres.';
     }
     
+    // Relaxed to allow any free-form references
     if (name === 'references' && value.trim()) {
-      const urlPattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/i;
-      if (!urlPattern.test(value.trim()) && !value.includes('http')) {
-        // Permitir texto livre mas alertar caso tente colocar uma URL inválida
-        if (value.includes('.') || value.includes('/')) {
-          return 'Se for inserir um link, use um formato de URL válido.';
-        }
-      }
+      return '';
     }
     
     return '';
@@ -233,10 +228,27 @@ export default function SalesBriefingForm() {
       return;
     }
     
-    if (!validateStep(1) || !validateStep(5)) {
+    // Validate final step & general required fields
+    const isStep1Valid = validateStep(1);
+    const isStep5Valid = validateStep(5);
+    
+    if (!isStep1Valid) {
       setCurrentStep(1);
       setTimeout(() => {
-        const errorField = document.getElementById('projectName');
+        const firstError = Object.keys(errors).find(key => 
+          ['projectName', 'businessDescription', 'projectGoals'].includes(key)
+        );
+        const errorField = document.getElementById(firstError || 'projectName');
+        errorField?.focus();
+        errorField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+      return;
+    }
+    
+    if (!isStep5Valid) {
+      setCurrentStep(5);
+      setTimeout(() => {
+        const errorField = document.getElementById('references');
         errorField?.focus();
         errorField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 100);
@@ -412,10 +424,59 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
         </Head>
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* STICKY HEADER MOBILE */}
+          <header className="lg:hidden sticky top-0 z-40 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-900/60 px-4 py-3 shadow-lg -mx-4 sm:-mx-6 mb-4">
+            <div className="flex items-center justify-between gap-3 mb-2.5">
+              <div className="flex items-center gap-1.5">
+                <div className="h-6 w-6 rounded-md bg-gradient-to-tr from-emerald-500 to-brand-600 flex items-center justify-center shadow-md shadow-brand-500/10">
+                  <TrendingUp className="h-3.5 w-3.5 text-white" />
+                </div>
+                <span className="font-extrabold tracking-wide text-xs bg-clip-text text-transparent bg-gradient-to-r from-white via-zinc-200 to-zinc-400">
+                  AJ <span className="text-brand-400 font-light">//</span> VENDAS
+                </span>
+              </div>
+              {status.state !== 'success' && (
+                <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                  Passo {currentStep}/5
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1 bg-zinc-900/60 border border-zinc-800 p-0.5 rounded-lg w-full overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <Link 
+                href="/" 
+                className="px-2.5 py-1 rounded-md text-[10px] font-semibold text-zinc-400 hover:text-zinc-200 transition-all"
+              >
+                Branding
+              </Link>
+              <Link 
+                href="/vendas" 
+                className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-brand-500 text-white shadow-sm transition-all"
+              >
+                Vendas
+              </Link>
+              <Link 
+                href="/sindicato" 
+                className="px-2.5 py-1 rounded-md text-[10px] font-semibold text-zinc-400 hover:text-zinc-200 transition-all"
+              >
+                Sindicato
+              </Link>
+            </div>
+
+            {status.state !== 'success' && (
+              <div className="w-full bg-zinc-900 rounded-full h-1 mt-2 overflow-hidden">
+                <div 
+                  className="bg-gradient-to-r from-emerald-500 to-brand-400 h-full rounded-full transition-all duration-300 ease-out" 
+                  style={{ width: `${progress}%` }} 
+                />
+              </div>
+            )}
+          </header>
+
           <div className="lg:grid lg:grid-cols-12 lg:gap-12 min-h-screen">
             
             {/* COLUNA ESQUERDA: Logo, Seletor e Menu Lateral */}
-            <div className="lg:col-span-5 lg:sticky lg:top-0 lg:h-screen flex flex-col justify-between py-12 lg:py-16 text-zinc-100 z-10">
+            <div className="hidden lg:flex lg:col-span-5 lg:sticky lg:top-0 lg:h-screen flex-col justify-between pt-12 pb-6 lg:py-16 text-zinc-100 z-10">
               <div>
                 {/* Logo */}
                 <div className="flex items-center gap-2 mb-8 group cursor-default">
@@ -465,7 +526,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
               <div className="space-y-6">
                 {/* Progresso Geral */}
                 {status.state !== 'success' && (
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-md shadow-2xl">
+                  <div className="hidden lg:block bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-md shadow-2xl">
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Preenchimento Geral</span>
                       <span className="text-xs font-bold text-emerald-400">{progress}%</span>
@@ -485,7 +546,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
 
                 {/* Lista dos Passos Interativos */}
                 {status.state !== 'success' && (
-                  <nav className="space-y-3" aria-label="Navegação do formulário">
+                  <nav className="hidden lg:block space-y-3" aria-label="Navegação do formulário">
                     {STEPS.map((step) => {
                       const StepIcon = step.icon;
                       const isActive = currentStep === step.number;
@@ -544,7 +605,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
             </div>
 
             {/* COLUNA DIREITA: Container das Etapas e Form */}
-            <div className="lg:col-span-7 pb-16 pt-4 lg:pt-16 flex flex-col justify-center">
+            <div className="lg:col-span-7 pb-16 pt-2 lg:pt-16 flex flex-col justify-center">
               
               {status.state === 'success' ? (
                 /* ================= SUCCESS STATE CARD ================= */
@@ -626,6 +687,12 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                 /* ================= MULTI-STEP WIZARD FORM ================= */
                 <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} noValidate className="space-y-8 animate-slide-up">
                   
+                  {/* Stepper compacto para mobile */}
+                  <div className="lg:hidden flex items-center justify-between mb-4 bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-md">
+                    <span className="text-xs md:text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Passo {currentStep} de 5</span>
+                    <span className="text-sm md:text-xs font-semibold text-zinc-300">{STEPS[currentStep - 1].shortTitle}</span>
+                  </div>
+                  
                   {/* 1. PASSO: O BÁSICO */}
                   {currentStep === 1 && (
                     <fieldset className="bg-white/5 border border-white/10 rounded-2xl p-6 md:p-8 backdrop-blur-md shadow-xl hover:border-white/15 transition-all duration-300">
@@ -635,7 +702,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                         </div>
                         <span>1. O Básico (Escopo e Modelo)</span>
                       </legend>
-                      <p className="clear-left text-xs text-zinc-400 mb-8 border-b border-zinc-800/80 pb-4">
+                      <p className="clear-left text-sm md:text-xs text-zinc-400 mb-8 border-b border-zinc-800/80 pb-4">
                         {STEPS[0].description}
                       </p>
                       
@@ -643,10 +710,10 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                         {/* Project Name */}
                         <div>
                           <div className="flex justify-between items-baseline mb-2">
-                            <label htmlFor="projectName" className="block text-xs font-semibold text-zinc-300">
+                            <label htmlFor="projectName" className="block text-base md:text-sm font-semibold text-zinc-300">
                               Qual é o nome provisório ou oficial do sistema/site? <span className="text-rose-500" aria-hidden="true">*</span>
                             </label>
-                            <span className="text-[10px] text-zinc-500">Obrigatório</span>
+                            <span className="text-xs md:text-[10px] text-zinc-500">Obrigatório</span>
                           </div>
                           <input
                             type="text"
@@ -659,14 +726,14 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                             aria-required="true"
                             aria-invalid={!!errors.projectName}
                             aria-describedby={errors.projectName ? "projectName-error" : undefined}
-                            className={`w-full bg-zinc-900/60 border rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 transition-all ${
+                            className={`w-full bg-zinc-900/60 border rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 transition-all ${
                               errors.projectName && touched.projectName
                                 ? 'border-rose-500/50 bg-rose-500/5 focus:border-rose-500'
                                 : 'border-zinc-800 focus:border-emerald-500'
                             }`}
                           />
                           {errors.projectName && touched.projectName && (
-                            <div id="projectName-error" className="flex items-center gap-1.5 mt-2 text-[10px] text-rose-400 font-medium" role="alert">
+                            <div id="projectName-error" className="flex items-center gap-1.5 mt-2 text-xs md:text-[10px] text-rose-400 font-medium" role="alert">
                               <AlertCircle className="h-3 w-3" />
                               <span>{errors.projectName}</span>
                             </div>
@@ -676,10 +743,10 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                         {/* Business Description */}
                         <div>
                           <div className="flex justify-between items-baseline mb-2">
-                            <label htmlFor="businessDescription" className="block text-xs font-semibold text-zinc-300">
+                            <label htmlFor="businessDescription" className="block text-base md:text-sm font-semibold text-zinc-300">
                               O que a empresa comercializa e qual é o modelo comercial? (B2B, B2C, venda interna/externa) <span className="text-rose-500" aria-hidden="true">*</span>
                             </label>
-                            <span className="text-[10px] text-zinc-500">Mínimo 10 caracteres</span>
+                            <span className="text-xs md:text-[10px] text-zinc-500">Mínimo 10 caracteres</span>
                           </div>
                           <textarea
                             id="businessDescription"
@@ -692,14 +759,14 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                             aria-required="true"
                             aria-invalid={!!errors.businessDescription}
                             aria-describedby={errors.businessDescription ? "businessDescription-error" : undefined}
-                            className={`w-full bg-zinc-900/60 border rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 transition-all resize-y ${
+                            className={`w-full bg-zinc-900/60 border rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 transition-all resize-y ${
                               errors.businessDescription && touched.businessDescription
                                 ? 'border-rose-500/50 bg-rose-500/5 focus:border-rose-500'
                                 : 'border-zinc-800 focus:border-emerald-500'
                             }`}
                           />
                           {errors.businessDescription && touched.businessDescription && (
-                            <div id="businessDescription-error" className="flex items-center gap-1.5 mt-2 text-[10px] text-rose-400 font-medium" role="alert">
+                            <div id="businessDescription-error" className="flex items-center gap-1.5 mt-2 text-xs md:text-[10px] text-rose-400 font-medium" role="alert">
                               <AlertCircle className="h-3 w-3" />
                               <span>{errors.businessDescription}</span>
                             </div>
@@ -709,10 +776,10 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                         {/* Project Goals */}
                         <div>
                           <div className="flex justify-between items-baseline mb-2">
-                            <label htmlFor="projectGoals" className="block text-xs font-semibold text-zinc-300">
+                            <label htmlFor="projectGoals" className="block text-base md:text-sm font-semibold text-zinc-300">
                               Quais são os principais objetivos do sistema e que problemas ele deve solucionar? <span className="text-rose-500" aria-hidden="true">*</span>
                             </label>
-                            <span className="text-[10px] text-zinc-500">Obrigatório</span>
+                            <span className="text-xs md:text-[10px] text-zinc-500">Obrigatório</span>
                           </div>
                           <textarea
                             id="projectGoals"
@@ -725,14 +792,14 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                             aria-required="true"
                             aria-invalid={!!errors.projectGoals}
                             aria-describedby={errors.projectGoals ? "projectGoals-error" : undefined}
-                            className={`w-full bg-zinc-900/60 border rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 transition-all resize-y ${
+                            className={`w-full bg-zinc-900/60 border rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 transition-all resize-y ${
                               errors.projectGoals && touched.projectGoals
                                 ? 'border-rose-500/50 bg-rose-500/5 focus:border-rose-500'
                                 : 'border-zinc-800 focus:border-emerald-500'
                             }`}
                           />
                           {errors.projectGoals && touched.projectGoals && (
-                            <div id="projectGoals-error" className="flex items-center gap-1.5 mt-2 text-[10px] text-rose-400 font-medium" role="alert">
+                            <div id="projectGoals-error" className="flex items-center gap-1.5 mt-2 text-xs md:text-[10px] text-rose-400 font-medium" role="alert">
                               <AlertCircle className="h-3 w-3" />
                               <span>{errors.projectGoals}</span>
                             </div>
@@ -751,14 +818,14 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                         </div>
                         <span>2. Processo Comercial e Usuários</span>
                       </legend>
-                      <p className="clear-left text-xs text-zinc-400 mb-8 border-b border-zinc-800/80 pb-4">
+                      <p className="clear-left text-sm md:text-xs text-zinc-400 mb-8 border-b border-zinc-800/80 pb-4">
                         {STEPS[1].description}
                       </p>
 
                       <div className="space-y-6">
                         {/* Current Process */}
                         <div>
-                          <label htmlFor="currentProcess" className="block text-xs font-semibold text-zinc-300 mb-2">
+                          <label htmlFor="currentProcess" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                             Como as vendas, clientes, pedidos e estoque são gerenciados hoje?
                           </label>
                           <textarea
@@ -768,13 +835,13 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                             onChange={handleChange}
                             rows={3}
                             placeholder="Ex: Usamos planilhas do Excel para estoque, tiramos pedidos em talão de papel ou e-mail, e um faturista digita manualmente no sistema de notas fiscais no fim do dia."
-                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-emerald-500 transition-all resize-y"
+                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-emerald-500 transition-all resize-y"
                           />
                         </div>
 
                         {/* Target Users */}
                         <div>
-                          <label htmlFor="targetUsers" className="block text-xs font-semibold text-zinc-300 mb-2">
+                          <label htmlFor="targetUsers" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                             Quem usará o sistema e em quais aparelhos/dispositivos (desktop, celular, tablet)?
                           </label>
                           <textarea
@@ -784,7 +851,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                             onChange={handleChange}
                             rows={3}
                             placeholder="Ex: Representantes de venda externos (usam 100% celular/Android na rua), gerentes comerciais no escritório (usam computadores/desktop) e clientes finais para acompanhar pedidos (celular/web)."
-                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-emerald-500 transition-all resize-y"
+                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-emerald-500 transition-all resize-y"
                           />
                         </div>
                       </div>
@@ -800,14 +867,14 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                         </div>
                         <span>3. Recursos e Relatórios</span>
                       </legend>
-                      <p className="clear-left text-xs text-zinc-400 mb-8 border-b border-zinc-800/80 pb-4">
+                      <p className="clear-left text-sm md:text-xs text-zinc-400 mb-8 border-b border-zinc-800/80 pb-4">
                         {STEPS[2].description}
                       </p>
 
                       <div className="space-y-6">
                         {/* Key Features */}
                         <div>
-                          <label htmlFor="keyFeatures" className="block text-xs font-semibold text-zinc-300 mb-2">
+                          <label htmlFor="keyFeatures" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                             Quais são os recursos funcionais indispensáveis? (Descreva o que os usuários precisam fazer)
                           </label>
                           <textarea
@@ -817,13 +884,13 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                             onChange={handleChange}
                             rows={4}
                             placeholder="Ex: Catálogo de produtos com fotos, busca por categorias, controle de saldo de estoque, cadastro rápido de novos clientes com validação de CNPJ, carrinho de compras, controle de comissão de cada vendedor, e aprovação de desconto por gerentes."
-                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-emerald-500 transition-all resize-y"
+                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-emerald-500 transition-all resize-y"
                           />
                         </div>
 
                         {/* Sales Reports */}
                         <div>
-                          <label htmlFor="salesReports" className="block text-xs font-semibold text-zinc-300 mb-2">
+                          <label htmlFor="salesReports" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                             Que tipo de painéis visuais (dashboards) ou relatórios de vendas são fundamentais?
                           </label>
                           <textarea
@@ -833,7 +900,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                             onChange={handleChange}
                             rows={3}
                             placeholder="Ex: Gráfico de vendas mensal, ranking dos produtos mais vendidos, relatório de comissão a pagar para cada vendedor, meta de vendas vs. realizado por período."
-                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-emerald-500 transition-all resize-y"
+                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-emerald-500 transition-all resize-y"
                           />
                         </div>
                       </div>
@@ -849,14 +916,14 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                         </div>
                         <span>4. Integrações e Notificações</span>
                       </legend>
-                      <p className="clear-left text-xs text-zinc-400 mb-8 border-b border-zinc-800/80 pb-4">
+                      <p className="clear-left text-sm md:text-xs text-zinc-400 mb-8 border-b border-zinc-800/80 pb-4">
                         {STEPS[3].description}
                       </p>
 
                       <div className="space-y-6">
                         {/* Payment Gateways */}
                         <div>
-                          <label htmlFor="paymentGateways" className="block text-xs font-semibold text-zinc-300 mb-2">
+                          <label htmlFor="paymentGateways" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                             Quais serão os meios de pagamento disponibilizados no sistema? (Ex: PIX automático, Boleto, Cartão)
                           </label>
                           <input
@@ -866,13 +933,13 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                             value={formData.paymentGateways}
                             onChange={handleChange}
                             placeholder="Ex: Pagamento faturado em boleto de 30 dias (padrão), PIX gerado via API (Asaas/Stripe) ou Cartão de Crédito."
-                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-emerald-500 transition-all"
+                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-emerald-500 transition-all"
                           />
                         </div>
 
                         {/* Integrations */}
                         <div>
-                          <label htmlFor="integrations" className="block text-xs font-semibold text-zinc-300 mb-2">
+                          <label htmlFor="integrations" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                             O sistema precisa se comunicar com ERP, CRM ou outras APIs (ex: WhatsApp, Notas Fiscais)?
                           </label>
                           <textarea
@@ -882,7 +949,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                             onChange={handleChange}
                             rows={3}
                             placeholder="Ex: Envio automático de confirmação de pedido via WhatsApp para o cliente, sincronização de pedidos e estoque com ERP Tiny/Bling, e notificação por e-mail quando o pedido for despachado."
-                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-emerald-500 transition-all resize-y"
+                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-emerald-500 transition-all resize-y"
                           />
                         </div>
                       </div>
@@ -898,14 +965,14 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                         </div>
                         <span>5. Design, Referências e Prazo</span>
                       </legend>
-                      <p className="clear-left text-xs text-zinc-400 mb-8 border-b border-zinc-800/80 pb-4">
+                      <p className="clear-left text-sm md:text-xs text-zinc-400 mb-8 border-b border-zinc-800/80 pb-4">
                         {STEPS[4].description}
                       </p>
 
                       <div className="space-y-6">
                         {/* Brand Identity */}
                         <div>
-                          <label htmlFor="brandIdentity" className="block text-xs font-semibold text-zinc-300 mb-2">
+                          <label htmlFor="brandIdentity" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                             A empresa possui manual de marca, logotipo vetorizado ou paleta de cores definida?
                           </label>
                           <input
@@ -915,17 +982,17 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                             value={formData.brandIdentity}
                             onChange={handleChange}
                             placeholder="Ex: Sim, possuímos manual de marca em PDF e logo em SVG. A cor predominante é azul escuro (#0d47a1)."
-                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-emerald-500 transition-all"
+                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-emerald-500 transition-all"
                           />
                         </div>
 
                         {/* References */}
                         <div>
                           <div className="flex justify-between items-baseline mb-2">
-                            <label htmlFor="references" className="block text-xs font-semibold text-zinc-300">
+                            <label htmlFor="references" className="block text-base md:text-sm font-semibold text-zinc-300">
                               Existem sistemas concorrentes ou outras ferramentas de vendas que você usa como referência visual?
                             </label>
-                            <span className="text-[10px] text-zinc-500">URL ou texto opcional</span>
+                            <span className="text-xs md:text-[10px] text-zinc-500">URL ou texto opcional</span>
                           </div>
                           <input
                             type="text"
@@ -937,14 +1004,14 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                             placeholder="Ex: Gostamos do painel de controle do Pipedrive (pipedrive.com) e do fluxo de checkout do Mercado Livre."
                             aria-invalid={!!errors.references}
                             aria-describedby={errors.references ? "references-error" : undefined}
-                            className={`w-full bg-zinc-900/60 border rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 transition-all ${
+                            className={`w-full bg-zinc-900/60 border rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 transition-all ${
                               errors.references && touched.references
                                 ? 'border-rose-500/50 bg-rose-500/5 focus:border-rose-500'
                                 : 'border-zinc-800 focus:border-emerald-500'
                             }`}
                           />
                           {errors.references && touched.references && (
-                            <div id="references-error" className="flex items-center gap-1.5 mt-2 text-[10px] text-rose-400 font-medium" role="alert">
+                            <div id="references-error" className="flex items-center gap-1.5 mt-2 text-xs md:text-[10px] text-rose-400 font-medium" role="alert">
                               <AlertCircle className="h-3 w-3" />
                               <span>{errors.references}</span>
                             </div>
@@ -953,7 +1020,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
 
                         {/* Deadline */}
                         <div>
-                          <label htmlFor="deadline" className="block text-xs font-semibold text-zinc-300 mb-2">
+                          <label htmlFor="deadline" className="block text-base md:text-sm font-semibold text-zinc-300 mb-2">
                             Qual é o prazo estimado ou data-limite ideal para o lançamento deste sistema?
                           </label>
                           <input
@@ -963,7 +1030,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                             value={formData.deadline}
                             onChange={handleChange}
                             placeholder="Ex: Precisamos de uma versão MVP rodando até o final do terceiro trimestre (fim de Setembro)."
-                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:border-emerald-500 transition-all"
+                            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-base md:text-sm text-white placeholder-zinc-600 focus:border-emerald-500 transition-all"
                           />
                         </div>
                       </div>
@@ -984,7 +1051,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                       type="button"
                       onClick={handleBack}
                       disabled={currentStep === 1 || status.state === 'loading'}
-                      className="inline-flex items-center justify-center gap-2 bg-zinc-900/60 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50 text-zinc-300 text-xs font-semibold py-3.5 px-6 rounded-xl active:scale-98 disabled:opacity-30 disabled:cursor-not-allowed disabled:active:scale-100 transition-all"
+                      className="inline-flex items-center justify-center gap-2 bg-zinc-900/60 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50 text-zinc-300 text-sm md:text-xs font-semibold py-3.5 px-6 rounded-xl active:scale-98 disabled:opacity-30 disabled:cursor-not-allowed disabled:active:scale-100 transition-all"
                     >
                       <ArrowLeft className="h-4 w-4" />
                       <span>Voltar</span>
@@ -994,7 +1061,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                       <button
                         type="button"
                         onClick={handleNext}
-                        className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-brand-600 hover:from-emerald-500 hover:to-brand-500 text-white text-xs font-semibold py-3.5 px-8 rounded-xl shadow-lg active:scale-98 transition-all duration-300"
+                        className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-brand-600 hover:from-emerald-500 hover:to-brand-500 text-white text-sm md:text-xs font-semibold py-3.5 px-8 rounded-xl shadow-lg active:scale-98 transition-all duration-300"
                       >
                         <span>Continuar</span>
                         <ArrowRight className="h-4 w-4" />
@@ -1003,7 +1070,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                       <button
                         type="submit"
                         disabled={status.state === 'loading'}
-                        className="group inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-brand-600 hover:from-emerald-500 hover:to-brand-500 text-white text-xs font-semibold py-3.5 px-10 rounded-xl shadow-lg hover:shadow-emerald-500/25 active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                        className="group inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-brand-600 hover:from-emerald-500 hover:to-brand-500 text-white text-sm md:text-xs font-semibold py-3.5 px-10 rounded-xl shadow-lg hover:shadow-emerald-500/25 active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
                       >
                         {status.state === 'loading' ? (
                           <>

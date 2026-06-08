@@ -277,56 +277,96 @@ export default function BrandingBriefingForm() {
     setStatus({ state: 'loading' });
     console.log('%c[Briefing Submission Initiated]', 'color: #8b5cf6; font-weight: bold;', formData);
     
+    const reportText = `==================================================
+BRIEFING ESTRATÉGICO DE BRANDING - ANDERSON JOSÉ BRANDING
+==================================================
+Empresa / Logotipo: ${formData.logoName}
+Data de Envio: ${new Date().toLocaleDateString('pt-BR')}
+
+1. O BÁSICO (ESTRUTURA E ESCOPO)
+--------------------------------------------------
+* Nome exato no logo: ${formData.logoName}
+* Slogan/Frase de apoio: ${formData.slogan || 'Não informado'}
+* O que a empresa faz: 
+  ${formData.businessDescription}
+* Razão do Rebranding: 
+  ${formData.rebrandingReason}
+* O que incomoda na marca atual: 
+  ${formData.currentBrandIssues || 'Não informado'}
+* Elemento obrigatório a manter: 
+  ${formData.keepFromOldIdentity || 'Não informado'}
+
+2. RAIO-X DO NEGÓCIO (POSICIONAMENTO OCULTO)
+--------------------------------------------------
+* História/Inspiração: 
+  ${formData.companyHistory || 'Não informado'}
+* Por que o cliente nos escolhe: 
+  ${formData.whyChooseUs || 'Não informado'}
+* Pior reclamação/dor no orgulho: 
+  ${formData.worstComplaint || 'Não informado'}
+* Declaração de posicionamento: 
+  ${formData.brandPositioningStatement || 'Não informado'}
+
+3. PÚBLICO-ALVO E CONCORRÊNCIA
+--------------------------------------------------
+* Cliente Ideal: 
+  ${formData.targetAudience || 'Não informado'}
+* Principal dor do cliente: 
+  ${formData.customerPainPoints || 'Não informado'}
+* Análise de Concorrentes: 
+  ${formData.competitorsAnalysis || 'Não informado'}
+
+4. PERSONALIDADE DA MARCA (EXTRAÇÃO PSICOLÓGICA)
+--------------------------------------------------
+* Marca como anfitriã de festa: 
+  ${formData.brandPartyHosting || 'Não informado'}
+* Personificação/Avatar: 
+  ${formData.brandPersonaAvatar || 'Não informado'}
+* Tom de Voz/Comunicação: 
+  ${formData.brandCommunicationTone || 'Não informado'}
+* Adjetivos desejados: 
+  ${formData.brandDesirableAdjectives || 'Não informado'}
+* Adjetivos indesejados: 
+  ${formData.brandUndesirableAdjectives || 'Não informado'}
+
+5. DIREÇÃO VISUAL E ENTREGÁVEIS (APLICAÇÃO PRÁTICA)
+--------------------------------------------------
+* Primeira sensação desejada: 
+  ${formData.brandFirstImpression || 'Não informado'}
+* Elementos a evitar: 
+  ${formData.visualsToAvoid || 'Não informado'}
+* Onde a marca será mais vista: 
+  ${formData.brandPrimaryTouchpoints || 'Não informado'}
+* Materiais prioritários/de imediato: 
+  ${formData.immediateDeliverables || 'Não informado'}
+* Links de Referência: 
+  ${formData.referenceLinks || 'Não informado'}
+* Prazo limite/Data de lançamento: 
+  ${formData.deadlineOrLaunchDate || 'Não informado'}
+
+==================================================
+Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Branding.
+==================================================`;
+    
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      /* 
-        Simulação de Inserção no Supabase:
-        
-        import { supabase } from '../lib/supabaseClient'
-        const { data, error } = await supabase
-          .from('branding_briefings')
-          .insert([
-            {
-              logo_name: formData.logoName,
-              slogan: formData.slogan,
-              business_description: formData.businessDescription,
-              rebranding_reason: formData.rebrandingReason,
-              current_brand_issues: formData.currentBrandIssues,
-              keep_from_old_identity: formData.keepFromOldIdentity,
-              
-              company_history: formData.companyHistory,
-              why_choose_us: formData.whyChooseUs,
-              worst_complaint: formData.worstComplaint,
-              brand_positioning_statement: formData.brandPositioningStatement,
-              
-              target_audience: formData.targetAudience,
-              customer_pain_points: formData.customerPainPoints,
-              competitors_analysis: formData.competitorsAnalysis,
-              
-              brand_party_hosting: formData.brandPartyHosting,
-              brand_persona_avatar: formData.brandPersonaAvatar,
-              brand_communication_tone: formData.brandCommunicationTone,
-              brand_desirable_adjectives: formData.brandDesirableAdjectives,
-              brand_undesirable_adjectives: formData.brandUndesirableAdjectives,
-              
-              brand_first_impression: formData.brandFirstImpression,
-              visuals_to_avoid: formData.visualsToAvoid,
-              brand_primary_touchpoints: formData.brandPrimaryTouchpoints,
-              immediate_deliverables: formData.immediateDeliverables,
-              reference_links: formData.referenceLinks,
-              deadline_or_launch_date: formData.deadlineOrLaunchDate,
-              created_at: new Date().toISOString()
-            }
-          ])
-          
-        if (error) throw error;
-      */
-      
-      console.log('%c[Briefing Successfully Saved / Simulated API Response 201]', 'color: #10b981; font-weight: bold;', {
-        success: true,
-        data: formData
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'branding',
+          subject: `Novo Briefing de Rebranding: ${formData.logoName}`,
+          content: reportText,
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error('Erro ao processar o envio do e-mail.');
+      }
+      
+      const resData = await response.json();
+      console.log('%c[Briefing Submission API Response]', 'color: #10b981; font-weight: bold;', resData);
       
       setStatus({ state: 'success' });
     } catch (error: any) {
@@ -468,7 +508,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
               </div>
 
               {/* Seletor de Briefing */}
-              <div className="flex items-center gap-1 bg-zinc-900/80 border border-zinc-800 p-1 rounded-xl mb-8 w-fit">
+              <div className="flex items-center gap-1 bg-zinc-900/80 border border-zinc-800 p-1 rounded-xl mb-8 w-full sm:w-fit overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <Link 
                   href="/" 
                   className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-brand-500 text-white shadow-md shadow-brand-500/10 transition-all"
@@ -480,6 +520,12 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                   className="px-3 py-1.5 rounded-lg text-[11px] font-semibold text-zinc-400 hover:text-zinc-200 transition-all"
                 >
                   Gestão de Vendas
+                </Link>
+                <Link 
+                  href="/sindicato" 
+                  className="px-3 py-1.5 rounded-lg text-[11px] font-semibold text-zinc-400 hover:text-zinc-200 transition-all"
+                >
+                  Gestão de Pagamentos
                 </Link>
               </div>
 

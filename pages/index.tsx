@@ -1369,6 +1369,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
 
                   {currentStep < 5 ? (
                     <button
+                      key="next-step-btn"
                       type="button"
                       onClick={handleNext}
                       className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white text-sm md:text-xs font-semibold py-3.5 px-8 rounded-xl shadow-lg active:scale-98 transition-all duration-300"
@@ -1378,6 +1379,7 @@ Relatório gerado em ${new Date().toLocaleString('pt-BR')} por Anderson José Br
                     </button>
                   ) : (
                     <button
+                      key="submit-form-btn"
                       type="submit"
                       disabled={status.state === 'loading'}
                       className="group inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white text-sm md:text-xs font-semibold py-3.5 px-10 rounded-xl shadow-lg hover:shadow-brand-500/25 active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
